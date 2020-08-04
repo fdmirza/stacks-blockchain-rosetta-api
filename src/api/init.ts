@@ -18,6 +18,7 @@ import { createAddressRouter } from './routes/address';
 import { createSearchRouter } from './routes/search';
 import { logger, logError, sendWsTxUpdate } from '../helpers';
 import { getTxFromDataStore } from './controllers/db-controller';
+import { createMempoolRouter } from './routes/mempool';
 
 export interface ApiServer {
   expressApp: ExpressWithAsync;
@@ -75,6 +76,7 @@ export async function startApiServer(
       router.use('/debug', createDebugRouter(datastore));
       router.use('/status', (req, res) => res.status(200).json({ status: 'ready' }));
       router.use('/faucets', createFaucetRouter(datastore));
+      router.use('/mempool', createMempoolRouter(datastore));
       return router;
     })()
   );

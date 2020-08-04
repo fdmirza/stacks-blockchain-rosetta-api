@@ -131,6 +131,8 @@ export interface DbMempoolTx {
 
   /** Only valid for `coinbase` tx types. Hex encoded 32-bytes. */
   coinbase_payload?: Buffer;
+
+  raw_result?: string;
 }
 
 export interface DbSmartContract {
@@ -141,7 +143,9 @@ export interface DbSmartContract {
   source_code: string;
   abi: string;
 }
-
+export interface DbMempoolTxId {
+  tx_id: string;
+}
 export enum DbFaucetRequestCurrency {
   BTC = 'btc',
   STX = 'stx',
@@ -251,6 +255,10 @@ export interface DataStore extends DataStoreEventEmitter {
     limit: number;
     offset: number;
   }): Promise<{ results: DbMempoolTx[]; total: number }>;
+  getMempoolTxIdList(args: {
+    limit: number;
+    offset: number;
+  }): Promise<{ results: DbMempoolTxId[]; total: number }>;
   getTx(txId: string): Promise<FoundOrNot<DbTx>>;
   getTxList(args: {
     limit: number;

@@ -33,6 +33,7 @@ import {
   DataStoreUpdateData,
   DbFaucetRequestCurrency,
   DbMempoolTx,
+  DbMempoolTxId,
   DbSearchResult,
 } from './common';
 import { TransactionType } from '@blockstack/stacks-blockchain-api-types';
@@ -142,6 +143,11 @@ const MEMPOOL_TX_COLUMNS = `
   coinbase_payload
 `;
 
+const MEMPOOL_TX_ID_COLUMNS = `
+  -- required columns
+  tx_id
+`;
+
 const BLOCK_COLUMNS = `
   block_hash, index_block_hash, parent_index_block_hash, parent_block_hash, parent_microblock, block_height, burn_block_time, canonical
 `;
@@ -233,6 +239,10 @@ interface TxQueryResult {
 
   // `coinbase` tx types
   coinbase_payload?: Buffer;
+}
+
+interface MempoolTxIdQueryResult {
+  tx_id: Buffer;
 }
 
 interface FaucetRequestQueryResult {
@@ -1025,6 +1035,39 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     );
 
     const parsed = resultQuery.rows.map(r => this.parseMempoolTxQueryResult(r));
+    return { results: parsed, total: totalQuery.rows[0].count };
+  }
+
+  async getMempoolTxIdList({
+    limit,
+    offset,
+  }: {
+    limit: number;
+    offset: number;
+  }): Promise<{ results: DbMempoolTxId[]; total: number }> {
+    const totalQuery = await this.pool.query<{ count: number }>(
+      `
+      SELECT COUNT(*)::integer
+      FROM mempool_txs
+      `
+    );
+    const resultQuery = await this.pool.query<MempoolTxIdQueryResult>(
+      `
+      SELECT ${MEMPOOL_TX_ID_COLUMNS}
+      FROM mempool_txs
+      ORDER BY receipt_time DESC
+      LIMIT $1
+      OFFSET $2
+      `,
+      [limit, offset]
+    );
+
+    const parsed = resultQuery.rows.map(r => {
+      const tx: DbMempoolTxId = {
+        tx_id: bufferToHexPrefixString(r.tx_id),
+      };
+      return tx;
+    });
     return { results: parsed, total: totalQuery.rows[0].count };
   }
 
