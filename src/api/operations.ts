@@ -72,7 +72,7 @@ function makeFeeOperation(tx: DbMempoolTx | DbTx): Operation {
   const fee: Operation = {
     operation_identifier: { index: 0 },
     type: 'fee',
-    status: 'success',
+    status: getTxStatusString(tx.status),
     account: { address: tx.sender_address },
     amount: {
       value: tx.fee_rate.toString(10),

@@ -76,11 +76,21 @@ export async function startApiServer(
       router.use('/debug', createDebugRouter(datastore));
       router.use('/status', (req, res) => res.status(200).json({ status: 'ready' }));
       router.use('/faucets', createFaucetRouter(datastore));
-      router.use('/mempool', createMempoolRouter(datastore));
+
       return router;
     })()
   );
 
+  app.use(
+    '/rosetta/v1',
+    (() => {
+      const router = addAsync(express.Router());
+      router.use(cors());
+      router.use('/mempool', createMempoolRouter(datastore));
+      router.use('/status', (req, res) => res.status(200).json({ status: 'ready' }));
+      return router;
+    })()
+  );
   // Setup direct proxy to core-node RPC endpoints (/v2)
   app.use('/v2', createCoreNodeRpcProxyRouter());
 
