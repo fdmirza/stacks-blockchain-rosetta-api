@@ -54,7 +54,7 @@ export async function startApiServer(
   app.use(
     expressWinston.logger({
       winstonInstance: logger,
-      metaField: null!,
+      metaField: (null as unknown) as string,
     })
   );
 
@@ -110,7 +110,7 @@ export async function startApiServer(
   app.use(
     expressWinston.errorLogger({
       winstonInstance: logger,
-      metaField: null!,
+      metaField: (null as unknown) as string,
       blacklistedMetaFields: ['trace', 'os', 'process'],
     })
   );

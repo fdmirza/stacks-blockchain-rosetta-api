@@ -55,9 +55,18 @@ export interface AddressBalanceResponse {
 }
 
 /**
+ * GET request that returns address balances
+ */
+export interface AddressStxBalanceResponse {
+  balance: string;
+  total_sent: string;
+  total_received: string;
+}
+
+/**
  * GET request that returns account transactions
  */
-export interface AccountTransactionsListResponse {
+export interface AddressTransactionsListResponse {
   limit: number;
   offset: number;
   total: number;
@@ -260,6 +269,7 @@ export interface MempoolTokenTransferTransaction {
    * Denotes whether the originating account is the same as the paying account
    */
   sponsored: boolean;
+  sponsor_address?: string;
   post_condition_mode: PostConditionMode;
   /**
    * A unix timestamp (in seconds) indicating when the transaction broadcast was received by the node.
@@ -302,6 +312,7 @@ export interface MempoolSmartContractTransaction {
    * Denotes whether the originating account is the same as the paying account
    */
   sponsored: boolean;
+  sponsor_address?: string;
   post_condition_mode: PostConditionMode;
   /**
    * A unix timestamp (in seconds) indicating when the transaction broadcast was received by the node.
@@ -341,6 +352,7 @@ export interface MempoolContractCallTransaction {
    * Denotes whether the originating account is the same as the paying account
    */
   sponsored: boolean;
+  sponsor_address?: string;
   post_condition_mode: PostConditionMode;
   /**
    * A unix timestamp (in seconds) indicating when the transaction broadcast was received by the node.
@@ -380,6 +392,7 @@ export interface MempoolPoisonMicroblockTransaction {
    * Denotes whether the originating account is the same as the paying account
    */
   sponsored: boolean;
+  sponsor_address?: string;
   post_condition_mode: PostConditionMode;
   /**
    * A unix timestamp (in seconds) indicating when the transaction broadcast was received by the node.
@@ -421,6 +434,7 @@ export interface MempoolCoinbaseTransaction {
    * Denotes whether the originating account is the same as the paying account
    */
   sponsored: boolean;
+  sponsor_address?: string;
   post_condition_mode: PostConditionMode;
   /**
    * A unix timestamp (in seconds) indicating when the transaction broadcast was received by the node.
@@ -671,6 +685,7 @@ export interface TokenTransferTransaction {
    * Denotes whether the originating account is the same as the paying account
    */
   sponsored: boolean;
+  sponsor_address?: string;
   post_condition_mode: PostConditionMode;
   tx_type: 'token_transfer';
   /**
@@ -748,6 +763,7 @@ export interface SmartContractTransaction {
    * Denotes whether the originating account is the same as the paying account
    */
   sponsored: boolean;
+  sponsor_address?: string;
   post_condition_mode: PostConditionMode;
   tx_type: 'smart_contract';
   /**
@@ -825,6 +841,7 @@ export interface ContractCallTransaction {
    * Denotes whether the originating account is the same as the paying account
    */
   sponsored: boolean;
+  sponsor_address?: string;
   post_condition_mode: PostConditionMode;
   tx_type: 'contract_call';
   /**
@@ -915,6 +932,7 @@ export interface PoisonMicroblockTransaction {
    * Denotes whether the originating account is the same as the paying account
    */
   sponsored: boolean;
+  sponsor_address?: string;
   post_condition_mode: PostConditionMode;
   tx_type: 'poison_microblock';
   poison_microblock: {
@@ -987,6 +1005,7 @@ export interface CoinbaseTransaction {
    * Denotes whether the originating account is the same as the paying account
    */
   sponsored: boolean;
+  sponsor_address?: string;
   post_condition_mode: PostConditionMode;
   tx_type: 'coinbase';
   coinbase_payload: {
