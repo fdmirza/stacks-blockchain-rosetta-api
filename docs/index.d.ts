@@ -92,6 +92,24 @@ export interface BlockListResponse {
   results: Block[];
 }
 
+export interface BlockListRosettaResponse {
+  results: Block[];
+  metadata: {
+    /**
+     * The number of blocks to return
+     */
+    limit: number;
+    /**
+     * The number to blocks to skip (starting at `0`)
+     */
+    offset: number;
+    /**
+     * The number of blocks available
+     */
+    total: number;
+  };
+}
+
 /**
  * GET request for account data
  */
@@ -232,10 +250,14 @@ export interface Block {
    * Hash representing the block
    */
   hash: string;
+
+  index_block_hash: string;
   /**
    * Hash of the prant block
    */
   parent_block_hash: string;
+
+  parent_index_block_hash: string;
   /**
    * Unix timestamp (in seconds) indicating when this block was mined.
    */

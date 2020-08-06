@@ -1,28 +1,35 @@
 import * as express from 'express';
 import { addAsync, RouterWithAsync } from '@awaitjs/express';
 import * as Bluebird from 'bluebird';
-import { DataStore, DbTx } from '../../datastore/common';
+import { DataStore, DbTx } from '../../../datastore/common';
 import {
   getTxFromDataStore,
   parseTxTypeStrings,
   parseDbMempoolTx,
-} from '../controllers/db-controller';
-import { waiter, has0xPrefix, logError } from '../../helpers';
-import { parseLimitQuery, parsePagingQueryInput } from '../pagination';
-import { validate } from '../validate';
+} from '../../controllers/db-controller';
+import { waiter, has0xPrefix, logError } from '../../../helpers';
+import { parseLimitQuery, parsePagingQueryInput } from '../../pagination';
+import { validate } from '../../validate';
 import {
   TransactionType,
   TransactionResults,
   MempoolTransactionListResponse,
   MempoolTransactionIDsResponse,
 } from '@blockstack/stacks-blockchain-api-types';
-import { getOperations } from '../operations';
+import { Operation, getOperations } from '../../operations';
 
 const MAX_MEMPOOL_TXS_PER_REQUEST = 200;
 const parseMempoolTxQueryLimit = parseLimitQuery({
   maxItems: MAX_MEMPOOL_TXS_PER_REQUEST,
   errorMsg: '`limit` must be equal to or less than ' + MAX_MEMPOOL_TXS_PER_REQUEST,
 });
+
+export interface RosettaTransaction {
+  transaction_identifier: {
+    hash: string;
+  };
+  operations: Operation[];
+}
 
 export function createMempoolRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -58,7 +65,7 @@ export function createMempoolRouter(db: DataStore): RouterWithAsync {
     }
 
     const operations = getOperations(mempoolTxQuery.result);
-    const result = {
+    const result: RosettaTransaction = {
       transaction_identifier: { hash: tx_id },
       operations: operations,
     };

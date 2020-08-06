@@ -251,7 +251,7 @@ export interface DataStore extends DataStoreEventEmitter {
     offset: number;
   }): Promise<{ results: DbBlock[]; total: number }>;
   getBlockTxs(indexBlockHash: string): Promise<{ results: string[] }>;
-
+  getBlockTxsRows(indexBlockHash: string): Promise<FoundOrNot<DbTx[]>>;
   getMempoolTx(txId: string): Promise<FoundOrNot<DbMempoolTx>>;
   getMempoolTxList(args: {
     limit: number;

@@ -43,6 +43,8 @@ import { readClarityValueArray, readTransactionPostConditions } from '../../p2p/
 import { BufferReader } from '../../binary-reader';
 import { serializePostCondition, serializePostConditionMode } from '../serializers/post-conditions';
 import { DbSmartContractEvent, DbFtEvent, DbNftEvent } from '../../datastore/common';
+import { getOperations } from '../operations';
+import { RosettaTransaction } from '../routes/rosetta/mempool';
 
 export function parseTxTypeStrings(values: string[]): TransactionType[] {
   return values.map(v => {
@@ -226,12 +228,48 @@ export async function getBlockFromDataStore(
     canonical: dbBlock.canonical,
     height: dbBlock.block_height,
     hash: dbBlock.block_hash,
+    index_block_hash: dbBlock.index_block_hash,
     parent_block_hash: dbBlock.parent_block_hash,
+    parent_index_block_hash: dbBlock.parent_index_block_hash,
     burn_block_time: dbBlock.burn_block_time,
     burn_block_time_iso: unixEpochToIso(dbBlock.burn_block_time),
     txs: txIds.results,
   };
   return { found: true, result: apiBlock };
+}
+
+export async function getBlockTransactionsFromDataStore(
+  indexBlockHash: string,
+  db: DataStore
+): Promise<{ found: true; result: RosettaTransaction[] } | { found: false }> {
+  const txsQuery = await db.getBlockTxsRows(indexBlockHash);
+  if (!txsQuery.found) {
+    return { found: false };
+  }
+  const transactions = txsQuery.result.map(tx => {
+    const operations = getOperations(tx);
+    return {
+      transaction_identifier: { hash: tx.tx_id },
+      operations: operations,
+    };
+  });
+  return { found: true, result: transactions };
+}
+
+export async function getTransactionFromDataStore(
+  txId: string,
+  db: DataStore
+): Promise<{ found: true; result: RosettaTransaction } | { found: false }> {
+  const txQuery = await db.getTx(txId);
+  if (!txQuery.found) {
+    return { found: false };
+  }
+  const operations = getOperations(txQuery.result);
+  const result = {
+    transaction_identifier: { hash: txId },
+    operations: operations,
+  };
+  return { found: true, result: result };
 }
 
 export function parseDbMempoolTx(dbTx: DbMempoolTx): MempoolTransaction {

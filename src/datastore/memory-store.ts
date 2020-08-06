@@ -138,6 +138,10 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
     return Promise.resolve({ results: results });
   }
 
+  getBlockTxsRows(indexBlockHash: string): Promise<FoundOrNot<DbTx[]>> {
+    throw new Error('not yet implemented');
+  }
+
   updateTx(tx: DbTx) {
     const txStored = { ...tx };
     this.txs.set(tx.tx_id, { entry: txStored });

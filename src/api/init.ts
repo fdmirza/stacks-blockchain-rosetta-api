@@ -18,7 +18,8 @@ import { createAddressRouter } from './routes/address';
 import { createSearchRouter } from './routes/search';
 import { logger, logError, sendWsTxUpdate } from '../helpers';
 import { getTxFromDataStore } from './controllers/db-controller';
-import { createMempoolRouter } from './routes/mempool';
+import { createMempoolRouter } from './routes/rosetta/mempool';
+import { createRosettaBlockRouter } from './routes/rosetta/block';
 
 export interface ApiServer {
   expressApp: ExpressWithAsync;
@@ -87,6 +88,7 @@ export async function startApiServer(
       const router = addAsync(express.Router());
       router.use(cors());
       router.use('/mempool', createMempoolRouter(datastore));
+      router.use('/block', createRosettaBlockRouter(datastore));
       router.use('/status', (req, res) => res.status(200).json({ status: 'ready' }));
       return router;
     })()

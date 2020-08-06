@@ -242,7 +242,6 @@ interface TxQueryResult {
   // `coinbase` tx types
   coinbase_payload?: Buffer;
 }
-
 interface MempoolTxIdQueryResult {
   tx_id: Buffer;
 }
@@ -820,6 +819,23 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     );
     const txIds = result.rows.sort(tx => tx.tx_index).map(tx => bufferToHexPrefixString(tx.tx_id));
     return { results: txIds };
+  }
+
+  async getBlockTxsRows(indexBlockHash: string) {
+    const result = await this.pool.query<TxQueryResult>(
+      `
+      SELECT ${TX_COLUMNS}
+      FROM txs
+      WHERE index_block_hash = $1
+      `,
+      [hexToBuffer(indexBlockHash)]
+    );
+    if (result.rowCount === 0) {
+      return { found: false } as const;
+    }
+    const parsed = result.rows.map(r => this.parseTxQueryResult(r));
+
+    return { found: true, result: parsed };
   }
 
   async updateTx(client: ClientBase, tx: DbTx): Promise<number> {

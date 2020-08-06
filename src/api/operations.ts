@@ -4,7 +4,7 @@ import { getTxTypeString, getTxStatusString } from './controllers/db-controller'
 import { assertNotNullish as unwrapOptional, bufferToHexPrefixString } from '../helpers';
 import { trueCV } from '@blockstack/stacks-transactions';
 
-interface Operation {
+export interface Operation {
   operation_identifier: OperationIdentifier;
   related_operations?: [RelatedOperation];
   type: string;
@@ -59,8 +59,10 @@ export function getOperations(tx: DbMempoolTx | DbTx): Operation[] {
       operations.push(makeDeployContractOperation(tx, operations.length));
       break;
     case 'coinbase':
+      operations.push(makeCoinbaseOperation(tx, 0));
       break;
     case 'poison_microblock':
+      operations.push(makePoisonMicroblockOperation(tx, 0));
       break;
     default:
       throw new Error(`Unexpected tx type: ${JSON.stringify(txType)}`);
@@ -163,4 +165,31 @@ function makeCallContractOperation(tx: DbMempoolTx | DbTx, index: number): Opera
   };
 
   return caller;
+}
+function makeCoinbaseOperation(tx: DbMempoolTx | DbTx, index: number): Operation {
+  // TODO : Add more mappings in operations for coinbase
+  const sender: Operation = {
+    operation_identifier: { index: index },
+    type: getTxTypeString(tx.type_id),
+    status: getTxStatusString(tx.status),
+    account: {
+      address: unwrapOptional(tx.sender_address, () => 'Unexpected nullish sender_address'),
+    },
+  };
+
+  return sender;
+}
+
+function makePoisonMicroblockOperation(tx: DbMempoolTx | DbTx, index: number): Operation {
+  // TODO : add more mappings in operations for poison-microblock
+  const sender: Operation = {
+    operation_identifier: { index: index },
+    type: getTxTypeString(tx.type_id),
+    status: getTxStatusString(tx.status),
+    account: {
+      address: unwrapOptional(tx.sender_address, () => 'Unexpected nullish sender_address'),
+    },
+  };
+
+  return sender;
 }
