@@ -1,6 +1,10 @@
 import * as express from 'express';
 import { addAsync, RouterWithAsync } from '@awaitjs/express';
-import { BlockListRosettaResponse } from '@blockstack/stacks-blockchain-api-types';
+import {
+  RosettaBlockResponse,
+  RosettaBlock,
+  RosettaTransaction,
+} from '@blockstack/stacks-blockchain-api-types';
 import { DataStore } from '../../../datastore/common';
 import {
   getBlockFromDataStore,
@@ -8,19 +12,19 @@ import {
   getTransactionFromDataStore,
 } from '../../controllers/db-controller';
 import { has0xPrefix } from '../../../helpers';
-import { RosettaTransaction } from './mempool';
+// import { RosettaTransaction } from './mempool';
 
-interface BlockResponse {
-  block_identifier: BlockIdentifier;
-  parent_block_identifier: BlockIdentifier;
-  timestamp: number;
-  transactions: RosettaTransaction[];
-}
+// interface BlockResponse {
+//   block_identifier: BlockIdentifier;
+//   parent_block_identifier: BlockIdentifier;
+//   timestamp: number;
+//   transactions: RosettaTransaction[];
+// }
 
-interface BlockIdentifier {
-  index: number;
-  hash: string;
-}
+// interface BlockIdentifier {
+//   index: number;
+//   hash: string;
+// }
 
 export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -38,9 +42,9 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
     }
     const parent_block = await getBlockFromDataStore(block.result.parent_block_hash, db);
 
-    const blockTxs = await getBlockTransactionsFromDataStore(block.result.index_block_hash, db);
+    const blockTxs = await getBlockTransactionsFromDataStore(block.result.hash, db);
 
-    const result: BlockResponse = {
+    const result: RosettaBlock = {
       block_identifier: { index: block.result.height, hash: block.result.hash },
       parent_block_identifier: {
         index: parent_block.found ? parent_block.result.height : 0,

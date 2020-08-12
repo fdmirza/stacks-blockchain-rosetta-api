@@ -14,7 +14,7 @@ import {
   TransactionType,
   TransactionResults,
   MempoolTransactionListResponse,
-  MempoolTransactionIDsResponse,
+  RosettaMempoolTransactionListResponse,
 } from '@blockstack/stacks-blockchain-api-types';
 import { Operation, getOperations } from '../../operations';
 
@@ -44,12 +44,12 @@ export function createMempoolRouter(db: DataStore): RouterWithAsync {
     const transaction_identifiers = txResults.map(tx => {
       return { hash: tx.tx_id };
     });
-    const metadata = {
+    const meta_data = {
       limit: limit,
       total: total,
       offset: offset,
     };
-    const response: MempoolTransactionIDsResponse = { transaction_identifiers, metadata };
+    const response: RosettaMempoolTransactionListResponse = { transaction_identifiers, meta_data };
     res.json(response);
   });
 
@@ -71,15 +71,14 @@ export function createMempoolRouter(db: DataStore): RouterWithAsync {
       transaction_identifier: { hash: tx_id },
       operations: operations,
     };
-    res.json(result);
     // TODO: this validation needs fixed now that the mempool-tx and mined-tx types no longer overlap
-    /*
+
     const schemaPath = require.resolve(
-      '@blockstack/stacks-blockchain-sidecar-types/entities/transactions/transaction.schema.json'
+      '@blockstack/stacks-blockchain-sidecar-types/entities/rosetta-mempool-transaction-response.schema.json'
     );
-    await validate(schemaPath, txQuery.result);
-    */
-    // res.json(mempoolTxQuery.result);
+    await validate(schemaPath, mempoolTxQuery.result);
+
+    res.json(result);
   });
 
   return router;

@@ -19,6 +19,7 @@ import {
   TransactionEventFungibleAsset,
   TransactionEventNonFungibleAsset,
   MempoolTransaction,
+  RosettaTransaction,
 } from '@blockstack/stacks-blockchain-api-types';
 
 import {
@@ -44,7 +45,7 @@ import { BufferReader } from '../../binary-reader';
 import { serializePostCondition, serializePostConditionMode } from '../serializers/post-conditions';
 import { DbSmartContractEvent, DbFtEvent, DbNftEvent } from '../../datastore/common';
 import { getOperations } from '../operations';
-import { RosettaTransaction } from '../routes/rosetta/mempool';
+// import { RosettaTransaction } from '../routes/rosetta/mempool';
 
 export function parseTxTypeStrings(values: string[]): TransactionType[] {
   return values.map(v => {
@@ -228,9 +229,7 @@ export async function getBlockFromDataStore(
     canonical: dbBlock.canonical,
     height: dbBlock.block_height,
     hash: dbBlock.block_hash,
-    index_block_hash: dbBlock.index_block_hash,
     parent_block_hash: dbBlock.parent_block_hash,
-    parent_index_block_hash: dbBlock.parent_index_block_hash,
     burn_block_time: dbBlock.burn_block_time,
     burn_block_time_iso: unixEpochToIso(dbBlock.burn_block_time),
     txs: txIds.results,

@@ -92,24 +92,6 @@ export interface BlockListResponse {
   results: Block[];
 }
 
-export interface BlockListRosettaResponse {
-  results: Block[];
-  metadata: {
-    /**
-     * The number of blocks to return
-     */
-    limit: number;
-    /**
-     * The number to blocks to skip (starting at `0`)
-     */
-    offset: number;
-    /**
-     * The number of blocks available
-     */
-    total: number;
-  };
-}
-
 /**
  * GET request for account data
  */
@@ -193,6 +175,356 @@ export interface RunFaucetResponse {
 }
 
 /**
+ * The block_identifier uniquely identifies a block in a particular network.
+ */
+export interface RosettaBlockIdentifier {
+  /**
+   * This is also known as the block height.
+   */
+  index: number;
+  /**
+   * Block hash
+   */
+  hash: string;
+}
+
+/**
+ * A BlockResponse includes a fully-populated block or a partially-populated block with a list of other transactions to fetch (other_transactions). As a result of the consensus algorithm of some blockchains, blocks can be omitted (i.e. certain block indexes can be skipped). If a query for one of these omitted indexes is made, the response should not include a Block object. It is VERY important to note that blocks MUST still form a canonical, connected chain of blocks where each block has a unique index. In other words, the PartialBlockIdentifier of a block after an omitted block should reference the last non-omitted block.
+ */
+export interface RosettaBlockResponse {
+  block?: RosettaBlock;
+  /**
+   * Some blockchains may require additional transactions to be fetched that weren't returned in the block response (ex: block only returns transaction hashes). For blockchains with a lot of transactions in each block, this can be very useful as consumers can concurrently fetch all transactions returned.
+   */
+  other_transactions?: OtherTransactionIdentifier[];
+}
+
+/**
+ * Blocks contain an array of Transactions that occurred at a particular BlockIdentifier. A hard requirement for blocks returned by Rosetta implementations is that they MUST be inalterable: once a client has requested and received a block identified by a specific BlockIndentifier, all future calls for that same BlockIdentifier must return the same block contents.
+ */
+export interface RosettaBlock {
+  block_identifier: RosettaBlockIdentifier;
+  parent_block_identifier: RosettaParentBlockIdentifier;
+  /**
+   * The timestamp of the block in milliseconds since the Unix Epoch. The timestamp is stored in milliseconds because some blockchains produce blocks more often than once a second.
+   */
+  timestamp: number;
+  /**
+   * All the transactions in the block
+   */
+  transactions: RosettaTransaction[];
+  /**
+   * meta data
+   */
+  metadata?: {
+    transactions_root: string;
+    difficulty: string;
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * The block_identifier uniquely identifies a block in a particular network.
+ */
+export interface RosettaParentBlockIdentifier {
+  /**
+   * This is also known as the block height.
+   */
+  index: number;
+  /**
+   * Block hash
+   */
+  hash: string;
+}
+
+/**
+ * The account_identifier uniquely identifies an account within a network. All fields in the account_identifier are utilized to determine this uniqueness (including the metadata field, if populated).
+ */
+export interface RosettaAccount {
+  /**
+   * The address may be a cryptographic public key (or some encoding of it) or a provided username.
+   */
+  address: string;
+  sub_account?: RosettaSubAccount;
+  /**
+   * Blockchains that utilize a username model (where the address is not a derivative of a cryptographic public key) should specify the public key(s) owned by the address in metadata.
+   */
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * Amount is some Value of a Currency. It is considered invalid to specify a Value without a Currency.
+ */
+export interface RosettaAmount {
+  /**
+   * Value of the transaction in atomic units represented as an arbitrary-sized signed integer. For example, 1 BTC would be represented by a value of 100000000.
+   */
+  value: string;
+  currency: RosettaCurrency;
+  /**
+   * An explanation about the purpose of this instance.
+   */
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * CoinChange is used to represent a change in state of a some coin identified by a coin_identifier. This object is part of the Operation model and must be populated for UTXO-based blockchains. Coincidentally, this abstraction of UTXOs allows for supporting both account-based transfers and UTXO-based transfers on the same blockchain (when a transfer is account-based, don't populate this model).
+ */
+export interface RosettaCoinChange {
+  /**
+   * CoinIdentifier uniquely identifies a Coin.
+   */
+  coin_identifier: {
+    /**
+     * Identifier should be populated with a globally unique identifier of a Coin. In Bitcoin, this identifier would be transaction_hash:index.
+     */
+    identifier: string;
+    [k: string]: unknown | undefined;
+  };
+  /**
+   * CoinActions are different state changes that a Coin can undergo. When a Coin is created, it is coin_created. When a Coin is spent, it is coin_spent. It is assumed that a single Coin cannot be created or spent more than once.
+   */
+  coin_action: "coin_created" | "coin_spent";
+}
+
+/**
+ * Currency is composed of a canonical Symbol and Decimals. This Decimals value is used to convert an Amount.Value from atomic units (Satoshis) to standard units (Bitcoins).
+ */
+export interface RosettaCurrency {
+  /**
+   * Canonical symbol associated with a currency.
+   */
+  symbol: string;
+  /**
+   * Number of decimal places in the standard unit representation of the amount. For example, BTC has 8 decimals. Note that it is not possible to represent the value of some currency in atomic units that is not base 10.
+   */
+  decimals: number;
+  /**
+   * Any additional information related to the currency itself. For example, it would be useful to populate this object with the contract address of an ERC-20 token.
+   */
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * Get a transaction in the mempool by its Transaction Identifier. This is a separate request than fetching a block transaction (/block/transaction) because some blockchain nodes need to know that a transaction query is for something in the mempool instead of a transaction in a block. Transactions may not be fully parsable until they are in a block (ex: may not be possible to determine the fee to pay before a transaction is executed). On this endpoint, it is ok that returned transactions are only estimates of what may actually be included in a block.
+ */
+export interface RosettaMempoolTransactionRequest {
+  network_identifier: NetworkIdentifier;
+  transaction_identifier: TransactionIdentifier;
+}
+
+/**
+ * The root schema comprises the entire JSON document.
+ */
+export interface RosettaMempoolTransactionListResponse {
+  /**
+   * An explanation about the purpose of this instance.
+   */
+  transaction_identifiers: TransactionIdentifier[];
+  /**
+   * meta data to support pagination
+   */
+  meta_data?: {
+    /**
+     * number of transactions returned
+     */
+    limit?: number;
+    /**
+     * Total number of transactions
+     */
+    total?: number;
+    /**
+     * Response offset
+     */
+    offset?: number;
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * A MempoolTransactionResponse contains an estimate of a mempool transaction. It may not be possible to know the full impact of a transaction in the mempool (ex: fee paid).
+ */
+export interface RosettaMempoolTransactionResponse {
+  transaction: RosettaTransaction;
+  /**
+   * An explanation about the purpose of this instance.
+   */
+  metadata?: {
+    /**
+     * An explanation about the purpose of this instance.
+     */
+    descendant_fees: number;
+    /**
+     * An explanation about the purpose of this instance.
+     */
+    ancestor_count: number;
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * The network_identifier specifies which network a particular object is associated with.
+ */
+export interface NetworkIdentifier {
+  /**
+   * Blockchain name
+   */
+  blockchain: string;
+  /**
+   * If a blockchain has a specific chain-id or network identifier, it should go in this field. It is up to the client to determine which network-specific identifier is mainnet or testnet.
+   */
+  network: string;
+  /**
+   * In blockchains with sharded state, the SubNetworkIdentifier is required to query some object on a specific shard. This identifier is optional for all non-sharded blockchains.
+   */
+  sub_network_identifier?: {
+    /**
+     * Netowork name
+     */
+    network: string;
+    /**
+     * Meta data from subnetwork identifier
+     */
+    metadata?: {
+      /**
+       * producer
+       */
+      producer: string;
+      [k: string]: unknown | undefined;
+    };
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * The operation_identifier uniquely identifies an operation within a transaction.
+ */
+export interface RosettaOperationIdentifier {
+  /**
+   * The operation index is used to ensure each operation has a unique identifier within a transaction. This index is only relative to the transaction and NOT GLOBAL. The operations in each transaction should start from index 0. To clarify, there may not be any notion of an operation index in the blockchain being described.
+   */
+  index: number;
+  /**
+   * Some blockchains specify an operation index that is essential for client use. For example, Bitcoin uses a network_index to identify which UTXO was used in a transaction. network_index should not be populated if there is no notion of an operation index in a blockchain (typically most account-based blockchains).
+   */
+  network_index?: number;
+}
+
+/**
+ * Operations contain all balance-changing information within a transaction. They are always one-sided (only affect 1 AccountIdentifier) and can succeed or fail independently from a Transaction.
+ */
+export interface RosettaOperaion {
+  operation_identifier: RosettaOperationIdentifier;
+  /**
+   * Restrict referenced related_operations to identifier indexes < the current operation_identifier.index. This ensures there exists a clear DAG-structure of relations. Since operations are one-sided, one could imagine relating operations in a single transfer or linking operations in a call tree.
+   */
+  related_operations?: RosettaRelatedOperation[];
+  /**
+   * The network-specific type of the operation. Ensure that any type that can be returned here is also specified in the NetworkStatus. This can be very useful to downstream consumers that parse all block data.
+   */
+  type: string;
+  /**
+   * The network-specific status of the operation. Status is not defined on the transaction object because blockchains with smart contracts may have transactions that partially apply. Blockchains with atomic transactions (all operations succeed or all operations fail) will have the same status for each operation.
+   */
+  status: string;
+  account?: RosettaAccount;
+  amount?: RosettaAmount;
+  coin_change?: RosettaCoinChange;
+  /**
+   * Operations Meta Data
+   */
+  metadata?: {
+    /**
+     * The asm
+     */
+    asm: string;
+    /**
+     * The hex
+     */
+    hex: string;
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * The transaction_identifier uniquely identifies a transaction in a particular network and block or in the mempool.
+ */
+export interface OtherTransactionIdentifier {
+  /**
+   * Any transactions that are attributable only to a block (ex: a block event) should use the hash of the block as the identifier.
+   */
+  hash: string;
+}
+
+/**
+ * Restrict referenced related_operations to identifier indexes < the current operation_identifier.index. This ensures there exists a clear DAG-structure of relations. Since operations are one-sided, one could imagine relating operations in a single transfer or linking operations in a call tree.
+ */
+export interface RosettaRelatedOperation {
+  /**
+   * Describes the index of related operation.
+   */
+  index?: number;
+  operation_identifier: RosettaOperationIdentifier;
+}
+
+/**
+ * The account_identifier uniquely identifies an account within a network. All fields in the account_identifier are utilized to determine this uniqueness (including the metadata field, if populated).
+ */
+export interface RosettaSubAccount {
+  /**
+   * The address may be a cryptographic public key (or some encoding of it) or a provided username.
+   */
+  address: string;
+  /**
+   * Blockchains that utilize a username model (where the address is not a derivative of a cryptographic public key) should specify the public key(s) owned by the address in metadata.
+   */
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * The transaction_identifier uniquely identifies a transaction in a particular network and block or in the mempool.
+ */
+export interface TransactionIdentifier {
+  /**
+   * Any transactions that are attributable only to a block (ex: a block event) should use the hash of the block as the identifier.
+   */
+  hash: string;
+}
+
+/**
+ * Transactions contain an array of Operations that are attributable to the same TransactionIdentifier.
+ */
+export interface RosettaTransaction {
+  transaction_identifier: TransactionIdentifier;
+  /**
+   * List of operations
+   */
+  operations: RosettaOperaion[];
+  /**
+   * Transactions that are related to other transactions (like a cross-shard transaction) should include the tranaction_identifier of these transactions in the metadata.
+   */
+  metadata?: {
+    /**
+     * The Size
+     */
+    size: number;
+    /**
+     * The locktime
+     */
+    lockTime: number;
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
  * GET request that returns transactions
  */
 export interface MempoolTransactionListResponse {
@@ -200,19 +532,6 @@ export interface MempoolTransactionListResponse {
   offset: number;
   total: number;
   results: MempoolTransaction[];
-}
-
-export interface MempoolTransactionIDsResponse {
-  transaction_identifiers: MempoolTransactionID[];
-  metadata: {
-    limit: number;
-    offset: number;
-    total: number;
-  };
-}
-
-export interface MempoolTransactionID {
-  hash: string;
 }
 
 /**
@@ -250,14 +569,10 @@ export interface Block {
    * Hash representing the block
    */
   hash: string;
-
-  index_block_hash: string;
   /**
    * Hash of the prant block
    */
   parent_block_hash: string;
-
-  parent_index_block_hash: string;
   /**
    * Unix timestamp (in seconds) indicating when this block was mined.
    */
@@ -277,7 +592,7 @@ export interface Block {
  */
 export interface MempoolTokenTransferTransaction {
   tx_id: string;
-  tx_status: 'pending';
+  tx_status: "pending";
   tx_result?: {
     hex: string;
     repr: string;
@@ -301,7 +616,7 @@ export interface MempoolTokenTransferTransaction {
    * An ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) timestamp indicating when the transaction broadcast was received by the node.
    */
   receipt_time_iso: string;
-  tx_type: 'token_transfer';
+  tx_type: "token_transfer";
   token_transfer: {
     recipient_address: string;
     /**
@@ -320,7 +635,7 @@ export interface MempoolTokenTransferTransaction {
  */
 export interface MempoolSmartContractTransaction {
   tx_id: string;
-  tx_status: 'pending';
+  tx_status: "pending";
   tx_result?: {
     hex: string;
     repr: string;
@@ -344,7 +659,7 @@ export interface MempoolSmartContractTransaction {
    * An ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) timestamp indicating when the transaction broadcast was received by the node.
    */
   receipt_time_iso: string;
-  tx_type: 'smart_contract';
+  tx_type: "smart_contract";
   smart_contract: {
     contract_id: string;
     /**
@@ -360,7 +675,7 @@ export interface MempoolSmartContractTransaction {
  */
 export interface MempoolContractCallTransaction {
   tx_id: string;
-  tx_status: 'pending';
+  tx_status: "pending";
   tx_result?: {
     hex: string;
     repr: string;
@@ -384,7 +699,7 @@ export interface MempoolContractCallTransaction {
    * An ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) timestamp indicating when the transaction broadcast was received by the node.
    */
   receipt_time_iso: string;
-  tx_type: 'contract_call';
+  tx_type: "contract_call";
   contract_call: {
     contract_id: string;
     /**
@@ -400,7 +715,7 @@ export interface MempoolContractCallTransaction {
  */
 export interface MempoolPoisonMicroblockTransaction {
   tx_id: string;
-  tx_status: 'pending';
+  tx_status: "pending";
   tx_result?: {
     hex: string;
     repr: string;
@@ -424,7 +739,7 @@ export interface MempoolPoisonMicroblockTransaction {
    * An ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) timestamp indicating when the transaction broadcast was received by the node.
    */
   receipt_time_iso: string;
-  tx_type: 'poison_microblock';
+  tx_type: "poison_microblock";
   poison_microblock: {
     /**
      * Hex encoded microblock header
@@ -442,7 +757,7 @@ export interface MempoolPoisonMicroblockTransaction {
  */
 export interface MempoolCoinbaseTransaction {
   tx_id: string;
-  tx_status: 'pending';
+  tx_status: "pending";
   tx_result?: {
     hex: string;
     repr: string;
@@ -466,7 +781,7 @@ export interface MempoolCoinbaseTransaction {
    * An ISO 8601 (YYYY-MM-DDTHH:mm:ss.sssZ) timestamp indicating when the transaction broadcast was received by the node.
    */
   receipt_time_iso: string;
-  tx_type: 'coinbase';
+  tx_type: "coinbase";
   coinbase_payload: {
     /**
      * Hex encoded 32-byte scratch space for block leader's use
@@ -489,13 +804,13 @@ export interface PostConditionStx {
   principal: PostConditionPrincipal;
   condition_code: PostConditionFungibleConditionCode;
   amount: string;
-  type: 'stx';
+  type: "stx";
 }
 
 export interface PostConditionFungible {
   principal: PostConditionPrincipal;
   condition_code: PostConditionFungibleConditionCode;
-  type: 'fungible';
+  type: "fungible";
   amount: string;
   asset: {
     asset_name: string;
@@ -507,7 +822,7 @@ export interface PostConditionFungible {
 export interface PostConditionNonFungible {
   principal: PostConditionPrincipal;
   condition_code: PostConditionNonFungibleConditionCode;
-  type: 'non_fungible';
+  type: "non_fungible";
   asset_value: {
     hex: string;
     repr: string;
@@ -523,55 +838,52 @@ export interface PostConditionNonFungible {
  * A fungible condition code encodes a statement being made for either STX or a fungible token, with respect to the originating account.
  */
 export type PostConditionFungibleConditionCode =
-  | 'sent_equal_to'
-  | 'sent_greater_than'
-  | 'sent_greater_than_or_equal_to'
-  | 'sent_less_than'
-  | 'sent_less_than_or_equal_to';
+  | "sent_equal_to"
+  | "sent_greater_than"
+  | "sent_greater_than_or_equal_to"
+  | "sent_less_than"
+  | "sent_less_than_or_equal_to";
 
-export type PostConditionMode = 'allow' | 'deny';
+export type PostConditionMode = "allow" | "deny";
 
 /**
  * A non-fungible condition code encodes a statement being made about a non-fungible token, with respect to whether or not the particular non-fungible token is owned by the account.
  */
-export type PostConditionNonFungibleConditionCode = 'sent' | 'not_sent';
+export type PostConditionNonFungibleConditionCode = "sent" | "not_sent";
 
-export type PostConditionPrincipalType =
-  | 'principal_origin'
-  | 'principal_standard'
-  | 'principal_contract';
+export type PostConditionPrincipalType = "principal_origin" | "principal_standard" | "principal_contract";
 
 export type PostConditionPrincipal =
   | {
       /**
        * String literal of type `PostConditionPrincipalType`
        */
-      type_id: 'principal_origin';
+      type_id: "principal_origin";
     }
   | {
       /**
        * String literal of type `PostConditionPrincipalType`
        */
-      type_id: 'principal_standard';
+      type_id: "principal_standard";
       address: string;
     }
   | {
       /**
        * String literal of type `PostConditionPrincipalType`
        */
-      type_id: 'principal_contract';
+      type_id: "principal_contract";
       address: string;
       contract_name: string;
     };
 
-export type PostConditionType = 'stx' | 'non_fungible' | 'fungible';
+export type PostConditionType = "stx" | "non_fungible" | "fungible";
 
 /**
  * Post-conditionscan limit the damage done to a user's assets
  */
 export type PostCondition = PostConditionStx | PostConditionFungible | PostConditionNonFungible;
 
-export type TransactionEventAssetType = 'transfer' | 'mint' | 'burn';
+export type TransactionEventAssetType = "transfer" | "mint" | "burn";
 
 export interface TransactionEventAsset {
   asset_event_type?: TransactionEventAssetType;
@@ -584,7 +896,7 @@ export interface TransactionEventAsset {
 
 export interface TransactionEventFungibleAsset {
   event_index: number;
-  event_type: 'fungible_token_asset';
+  event_type: "fungible_token_asset";
   asset: {
     asset_event_type: string;
     asset_id: string;
@@ -596,7 +908,7 @@ export interface TransactionEventFungibleAsset {
 
 export interface TransactionEventNonFungibleAsset {
   event_index: number;
-  event_type: 'non_fungible_token_asset';
+  event_type: "non_fungible_token_asset";
   asset: {
     asset_event_type: string;
     asset_id: string;
@@ -614,7 +926,7 @@ export interface TransactionEventNonFungibleAsset {
  */
 export interface TransactionEventSmartContractLog {
   event_index: number;
-  event_type: 'smart_contract_log';
+  event_type: "smart_contract_log";
   contract_log: {
     contract_id: string;
     topic: string;
@@ -630,7 +942,7 @@ export interface TransactionEventSmartContractLog {
  */
 export interface TransactionEventStxAsset {
   event_index: number;
-  event_type: 'stx_asset';
+  event_type: "stx_asset";
   asset: TransactionEventAsset;
 }
 
@@ -638,10 +950,10 @@ export interface TransactionEventStxAsset {
  * Events types
  */
 export type TransactionEventType =
-  | 'smart_contract_log'
-  | 'stx_asset'
-  | 'fungible_token_asset'
-  | 'non_fungible_token_asset';
+  | "smart_contract_log"
+  | "stx_asset"
+  | "fungible_token_asset"
+  | "non_fungible_token_asset";
 
 export type TransactionEvent =
   | TransactionEventSmartContractLog
@@ -709,7 +1021,7 @@ export interface TokenTransferTransaction {
   sponsored: boolean;
   sponsor_address?: string;
   post_condition_mode: PostConditionMode;
-  tx_type: 'token_transfer';
+  tx_type: "token_transfer";
   /**
    * List of transaction events
    */
@@ -787,7 +1099,7 @@ export interface SmartContractTransaction {
   sponsored: boolean;
   sponsor_address?: string;
   post_condition_mode: PostConditionMode;
-  tx_type: 'smart_contract';
+  tx_type: "smart_contract";
   /**
    * List of transaction events
    */
@@ -865,7 +1177,7 @@ export interface ContractCallTransaction {
   sponsored: boolean;
   sponsor_address?: string;
   post_condition_mode: PostConditionMode;
-  tx_type: 'contract_call';
+  tx_type: "contract_call";
   /**
    * List of transaction events
    */
@@ -956,7 +1268,7 @@ export interface PoisonMicroblockTransaction {
   sponsored: boolean;
   sponsor_address?: string;
   post_condition_mode: PostConditionMode;
-  tx_type: 'poison_microblock';
+  tx_type: "poison_microblock";
   poison_microblock: {
     /**
      * Hex encoded microblock header
@@ -1029,7 +1341,7 @@ export interface CoinbaseTransaction {
   sponsored: boolean;
   sponsor_address?: string;
   post_condition_mode: PostConditionMode;
-  tx_type: 'coinbase';
+  tx_type: "coinbase";
   coinbase_payload: {
     /**
      * Hex encoded 32-byte scratch space for block leader's use
@@ -1041,21 +1353,12 @@ export interface CoinbaseTransaction {
 /**
  * Status of the transaction
  */
-export type TransactionStatus =
-  | 'success'
-  | 'pending'
-  | 'abort_by_response'
-  | 'abort_by_post_condition';
+export type TransactionStatus = "success" | "pending" | "abort_by_response" | "abort_by_post_condition";
 
 /**
  * String literal of all Stacks 2.0 transaction types
  */
-export type TransactionType =
-  | 'token_transfer'
-  | 'smart_contract'
-  | 'contract_call'
-  | 'poison_microblock'
-  | 'coinbase';
+export type TransactionType = "token_transfer" | "smart_contract" | "contract_call" | "poison_microblock" | "coinbase";
 
 /**
  * Describes all transaction types on Stacks 2.0 blockchain
@@ -1066,3 +1369,4 @@ export type Transaction =
   | ContractCallTransaction
   | PoisonMicroblockTransaction
   | CoinbaseTransaction;
+

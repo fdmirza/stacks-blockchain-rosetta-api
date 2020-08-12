@@ -3,54 +3,59 @@ import { getTxTypeString, getTxStatusString } from './controllers/db-controller'
 
 import { assertNotNullish as unwrapOptional, bufferToHexPrefixString } from '../helpers';
 import { CoinAction } from '../datastore/common';
+import {
+  RosettaOperaion,
+  RosettaOperationIdentifier,
+  RosettaSubAccount,
+} from '@blockstack/stacks-blockchain-api-types';
 
-export interface Operation {
-  operation_identifier: OperationIdentifier;
-  related_operations?: [RelatedOperation];
-  type: string;
-  status: string;
-  account: Account;
-  amount?: Amount;
-  coin_change?: CoinChange;
-}
+// export interface Operation {
+//   operation_identifier: OperationIdentifier;
+//   related_operations?: [RelatedOperation];
+//   type: string;
+//   status: string;
+//   account: Account;
+//   amount?: Amount;
+//   coin_change?: CoinChange;
+// }
 
-interface OperationIdentifier {
-  index: number;
-}
-interface Account {
-  address: string;
-  sub_account?: SubAccount;
-}
-interface SubAccount {
-  address: string | undefined;
-  metadata: {
-    contract_call_function_name: string | undefined;
-    contract_call_function_args: string | undefined;
-    raw_result?: string | undefined;
-  };
-}
-interface Amount {
-  value: string;
-  currency: Currency;
-}
-interface Currency {
-  symbol: String;
-  decimals: number;
-}
+// interface OperationIdentifier {
+//   index: number;
+// }
+// interface Account {
+//   address: string;
+//   sub_account?: SubAccount;
+// }
+// interface SubAccount {
+//   address: string | undefined;
+//   metadata: {
+//     contract_call_function_name: string | undefined;
+//     contract_call_function_args: string | undefined;
+//     raw_result?: string | undefined;
+//   };
+// }
+// interface Amount {
+//   value: string;
+//   currency: Currency;
+// }
+// interface Currency {
+//   symbol: String;
+//   decimals: number;
+// }
 
-interface RelatedOperation {
-  index: number;
-  operation_identifier: OperationIdentifier;
-}
+// interface RelatedOperation {
+//   index: number;
+//   operation_identifier: OperationIdentifier;
+// }
 
-interface CoinChange {
-  coin_identifier: {
-    identifier: string;
-  };
-  coin_action: string;
-}
-export function getOperations(tx: DbMempoolTx | DbTx): Operation[] {
-  const operations: Operation[] = [];
+// interface CoinChange {
+//   coin_identifier: {
+//     identifier: string;
+//   };
+//   coin_action: string;
+// }
+export function getOperations(tx: DbMempoolTx | DbTx): RosettaOperaion[] {
+  const operations: RosettaOperaion[] = [];
   const txType = getTxTypeString(tx.type_id);
   switch (txType) {
     case 'token_transfer':
@@ -78,8 +83,8 @@ export function getOperations(tx: DbMempoolTx | DbTx): Operation[] {
   return operations;
 }
 
-function makeFeeOperation(tx: DbMempoolTx | DbTx): Operation {
-  const fee: Operation = {
+function makeFeeOperation(tx: DbMempoolTx | DbTx): RosettaOperaion {
+  const fee: RosettaOperaion = {
     operation_identifier: { index: 0 },
     type: 'fee',
     status: getTxStatusString(tx.status),
@@ -93,8 +98,8 @@ function makeFeeOperation(tx: DbMempoolTx | DbTx): Operation {
   return fee;
 }
 
-function makeSenderOperation(tx: DbMempoolTx | DbTx, index: number): Operation {
-  const sender: Operation = {
+function makeSenderOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperaion {
+  const sender: RosettaOperaion = {
     operation_identifier: { index: index },
     type: getTxTypeString(tx.type_id),
     status: getTxStatusString(tx.status),
@@ -119,8 +124,8 @@ function makeSenderOperation(tx: DbMempoolTx | DbTx, index: number): Operation {
   return sender;
 }
 
-function makeRecieverOperation(tx: DbMempoolTx | DbTx, index: number): Operation {
-  const reciever: Operation = {
+function makeRecieverOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperaion {
+  const reciever: RosettaOperaion = {
     operation_identifier: { index: index },
     related_operations: [{ index: 0, operation_identifier: { index: 1 } }],
     type: getTxTypeString(tx.type_id),
@@ -147,8 +152,8 @@ function makeRecieverOperation(tx: DbMempoolTx | DbTx, index: number): Operation
   return reciever;
 }
 
-function makeDeployContractOperation(tx: DbMempoolTx | DbTx, index: number): Operation {
-  const deployer: Operation = {
+function makeDeployContractOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperaion {
+  const deployer: RosettaOperaion = {
     operation_identifier: { index: index },
     type: getTxTypeString(tx.type_id),
     status: getTxStatusString(tx.status),
@@ -160,15 +165,15 @@ function makeDeployContractOperation(tx: DbMempoolTx | DbTx, index: number): Ope
   return deployer;
 }
 
-function makeCallContractOperation(tx: DbMempoolTx | DbTx, index: number): Operation {
-  const caller: Operation = {
+function makeCallContractOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperaion {
+  const caller: RosettaOperaion = {
     operation_identifier: { index: index },
     type: getTxTypeString(tx.type_id),
     status: getTxStatusString(tx.status),
     account: {
       address: unwrapOptional(tx.sender_address, () => 'Unexpected nullish sender_address'),
       sub_account: {
-        address: tx.contract_call_contract_id,
+        address: tx.contract_call_contract_id ? tx.contract_call_contract_id : '',
         metadata: {
           contract_call_function_name: tx.contract_call_function_name,
           contract_call_function_args: bufferToHexPrefixString(
@@ -182,9 +187,9 @@ function makeCallContractOperation(tx: DbMempoolTx | DbTx, index: number): Opera
 
   return caller;
 }
-function makeCoinbaseOperation(tx: DbMempoolTx | DbTx, index: number): Operation {
+function makeCoinbaseOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperaion {
   // TODO : Add more mappings in operations for coinbase
-  const sender: Operation = {
+  const sender: RosettaOperaion = {
     operation_identifier: { index: index },
     type: getTxTypeString(tx.type_id),
     status: getTxStatusString(tx.status),
@@ -196,9 +201,9 @@ function makeCoinbaseOperation(tx: DbMempoolTx | DbTx, index: number): Operation
   return sender;
 }
 
-function makePoisonMicroblockOperation(tx: DbMempoolTx | DbTx, index: number): Operation {
+function makePoisonMicroblockOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOperaion {
   // TODO : add more mappings in operations for poison-microblock
-  const sender: Operation = {
+  const sender: RosettaOperaion = {
     operation_identifier: { index: index },
     type: getTxTypeString(tx.type_id),
     status: getTxStatusString(tx.status),

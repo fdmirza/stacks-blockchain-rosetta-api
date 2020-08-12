@@ -93,6 +93,7 @@ export async function startApiServer(
       return router;
     })()
   );
+
   // Setup direct proxy to core-node RPC endpoints (/v2)
   app.use('/v2', createCoreNodeRpcProxyRouter());
 

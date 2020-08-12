@@ -59,7 +59,7 @@ paths:
               example:
                 $ref: ./api/faucet/run-faucet.example.json
         500:
-          description: Failed to run faucet 
+          description: Failed to run faucet
   /extended/v1/faucets/btc:
     parameters:
       - name: address
@@ -84,7 +84,7 @@ paths:
               example:
                 $ref: ./api/faucet/run-faucet.example.json
         500:
-          description: Failed to run faucet 
+          description: Failed to run faucet
 
   /extended/v1/tx:
     get:
@@ -92,9 +92,9 @@ paths:
       tags:
         - Transactions
       operationId: get_transaction_list
-      description: | 
+      description: |
         Get all recently mined transactions
-      
+
         If using TypeScript, import typings for this response from our types package:
 
         `import type { TransactionResults } from '@blockstack/stacks-blockchain-api-types';`
@@ -188,12 +188,12 @@ paths:
                 $ref: ./api/blocks/get-blocks.example.json
   /extended/v1/block/{block_hash}:
     parameters:
-        - name: block_hash
-          in: path
-          description: Hash of the block
-          required: true
-          schema:
-            type: string
+      - name: block_hash
+        in: path
+        description: Hash of the block
+        required: true
+        schema:
+          type: string
     get:
       summary: Get block
       description: Get a specific block by hash
@@ -265,7 +265,7 @@ paths:
                 $ref: ./entities/transaction-events/transaction-event.schema.json
               example:
                 $ref: ./entities/transaction-events/transaction-event-smart-contract-log.example.json
- 
+
   /v2/contracts/interface/{stacks_address}/{contract_name}:
     get:
       summary: Get contract interface
@@ -343,8 +343,7 @@ paths:
       requestBody:
         description: Hex string serialization of the lookup key (which should be a Clarity value)
         required: true
-        content:
-          application/json
+        content: application/json
 
   /v2/contracts/source/{stacks_address}/{contract_name}:
     get:
@@ -490,6 +489,27 @@ paths:
                 $ref: ./api/address/get-address-transactions.schema.json
               example:
                 $ref: ./api/address/get-address-transactions.example.json
+
+  /rosetta/v1/mempool/transaction:
+    post:
+      summary: Get rosetta mempool transaction
+      tags:
+        - Rosetta
+      operationId: get_rosetaa_mempool_transaction
+      requestBody:
+        content: application/json
+        required: true
+        schema:
+          $ref: ./entities/rosetta-mempool-transactions/rosetta-mempool-transaction-request.schema.json
+      responses:
+        200:
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: ./entities/rosetta-mempool-transactions/rosetta-mempool-transaction-response.schema.json
+              example:
+                $ref: ./entities/rosetta-mempool-transactions/rosetta-mempool-transaction.example.json
 
   /extended/v1/address/{principal}/assets:
     get:
