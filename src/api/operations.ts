@@ -2,7 +2,7 @@ import { DbMempoolTx, DbTx } from '../datastore/common';
 import { getTxTypeString, getTxStatusString } from './controllers/db-controller';
 
 import { assertNotNullish as unwrapOptional, bufferToHexPrefixString } from '../helpers';
-import { trueCV } from '@blockstack/stacks-transactions';
+import { CoinAction } from '../datastore/common';
 
 export interface Operation {
   operation_identifier: OperationIdentifier;
@@ -11,6 +11,7 @@ export interface Operation {
   status: string;
   account: Account;
   amount?: Amount;
+  coin_change?: CoinChange;
 }
 
 interface OperationIdentifier {
@@ -40,6 +41,13 @@ interface Currency {
 interface RelatedOperation {
   index: number;
   operation_identifier: OperationIdentifier;
+}
+
+interface CoinChange {
+  coin_identifier: {
+    identifier: string;
+  };
+  coin_action: string;
 }
 export function getOperations(tx: DbMempoolTx | DbTx): Operation[] {
   const operations: Operation[] = [];
@@ -102,6 +110,10 @@ function makeSenderOperation(tx: DbMempoolTx | DbTx, index: number): Operation {
         ).toString(10),
       currency: { symbol: 'STX', decimals: 18 },
     },
+    coin_change: {
+      coin_action: CoinAction.CoinSpent,
+      coin_identifier: { identifier: tx.tx_id + ':' + index },
+    },
   };
 
   return sender;
@@ -125,6 +137,10 @@ function makeRecieverOperation(tx: DbMempoolTx | DbTx, index: number): Operation
         () => 'Unexpected nullish token_transfer_amount'
       ).toString(10),
       currency: { symbol: 'STX', decimals: 18 },
+    },
+    coin_change: {
+      coin_action: CoinAction.CoinCreated,
+      coin_identifier: { identifier: tx.tx_id + ':' + index },
     },
   };
 

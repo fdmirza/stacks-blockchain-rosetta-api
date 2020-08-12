@@ -40,6 +40,11 @@ export enum DbTxStatus {
   AbortByPostCondition = -2,
 }
 
+export enum CoinAction {
+  CoinSpent = 'coin_spent',
+  CoinCreated = 'coin_created',
+}
+
 // TODO: create a base interface for DbTx and DbMempoolTx, rename DbTx to DbTxMined?
 
 export interface DbTx {

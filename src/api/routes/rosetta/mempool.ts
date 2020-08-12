@@ -35,8 +35,10 @@ export function createMempoolRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
   router.use(express.json());
   router.postAsync('/', async (req, res) => {
-    const limit = parseMempoolTxQueryLimit(req.body.metadata.limit ?? 100);
-    const offset = parsePagingQueryInput(req.body.metadata.offset ?? 0);
+    const limit = req.body.metadata
+      ? parseMempoolTxQueryLimit(req.body.metadata.limit ?? 100)
+      : 100;
+    const offset = req.body.metadata ? parsePagingQueryInput(req.body.metadata.offset ?? 0) : 0;
     const { results: txResults, total } = await db.getMempoolTxIdList({ offset, limit });
 
     const transaction_identifiers = txResults.map(tx => {
