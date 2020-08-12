@@ -5,55 +5,8 @@ import { assertNotNullish as unwrapOptional, bufferToHexPrefixString } from '../
 import { CoinAction } from '../datastore/common';
 import {
   RosettaOperaion,
-  RosettaOperationIdentifier,
-  RosettaSubAccount,
 } from '@blockstack/stacks-blockchain-api-types';
 
-// export interface Operation {
-//   operation_identifier: OperationIdentifier;
-//   related_operations?: [RelatedOperation];
-//   type: string;
-//   status: string;
-//   account: Account;
-//   amount?: Amount;
-//   coin_change?: CoinChange;
-// }
-
-// interface OperationIdentifier {
-//   index: number;
-// }
-// interface Account {
-//   address: string;
-//   sub_account?: SubAccount;
-// }
-// interface SubAccount {
-//   address: string | undefined;
-//   metadata: {
-//     contract_call_function_name: string | undefined;
-//     contract_call_function_args: string | undefined;
-//     raw_result?: string | undefined;
-//   };
-// }
-// interface Amount {
-//   value: string;
-//   currency: Currency;
-// }
-// interface Currency {
-//   symbol: String;
-//   decimals: number;
-// }
-
-// interface RelatedOperation {
-//   index: number;
-//   operation_identifier: OperationIdentifier;
-// }
-
-// interface CoinChange {
-//   coin_identifier: {
-//     identifier: string;
-//   };
-//   coin_action: string;
-// }
 export function getOperations(tx: DbMempoolTx | DbTx): RosettaOperaion[] {
   const operations: RosettaOperaion[] = [];
   const txType = getTxTypeString(tx.type_id);
@@ -91,7 +44,7 @@ function makeFeeOperation(tx: DbMempoolTx | DbTx): RosettaOperaion {
     account: { address: tx.sender_address },
     amount: {
       value: tx.fee_rate.toString(10),
-      currency: { symbol: 'STX', decimals: 18 },
+      currency: { symbol: 'STX', decimals: 6 },
     },
   };
 
@@ -113,7 +66,7 @@ function makeSenderOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOper
           tx.token_transfer_amount,
           () => 'Unexpected nullish token_transfer_amount'
         ).toString(10),
-      currency: { symbol: 'STX', decimals: 18 },
+      currency: { symbol: 'STX', decimals: 6 },
     },
     coin_change: {
       coin_action: CoinAction.CoinSpent,
@@ -141,7 +94,7 @@ function makeRecieverOperation(tx: DbMempoolTx | DbTx, index: number): RosettaOp
         tx.token_transfer_amount,
         () => 'Unexpected nullish token_transfer_amount'
       ).toString(10),
-      currency: { symbol: 'STX', decimals: 18 },
+      currency: { symbol: 'STX', decimals: 6 },
     },
     coin_change: {
       coin_action: CoinAction.CoinCreated,

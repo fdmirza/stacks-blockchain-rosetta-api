@@ -242,6 +242,7 @@ export async function getBlockTransactionsFromDataStore(
   db: DataStore
 ): Promise<{ found: true; result: RosettaTransaction[] } | { found: false }> {
   const txsQuery = await db.getBlockTxsRows(indexBlockHash);
+  console.log("txsQuery", txsQuery)
   if (!txsQuery.found) {
     return { found: false };
   }
