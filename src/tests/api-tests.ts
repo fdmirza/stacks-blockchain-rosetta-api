@@ -1306,7 +1306,7 @@ describe('api tests', () => {
     };
     await db.updateTx(client, tx);
 
-    const blockQuery = await getBlockFromDataStore(db, block.block_hash);
+    const blockQuery = await getBlockFromDataStore(block.block_hash, db);
     if (!blockQuery.found) {
       throw new Error('block not found');
     }

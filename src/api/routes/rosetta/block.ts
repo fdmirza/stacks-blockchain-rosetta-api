@@ -8,6 +8,7 @@ import {
   getBlockFromDataStore,
   getBlockTransactionsFromDataStore,
   getTransactionFromDataStore,
+  getRosettaBlockFromDataStore
 } from '../../controllers/db-controller';
 import { has0xPrefix } from '../../../helpers';
 
@@ -22,27 +23,14 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
       block_hash = '0x' + block_hash;
     }
 
-    const block = await getBlockFromDataStore(db, block_hash, index);
+    const block = await getRosettaBlockFromDataStore(db, block_hash, index);
 
     if (!block.found) {
       res.status(404).json({ error: `cannot find block by hash ${block_hash}` });
       return;
     }
-    const parent_block = await getBlockFromDataStore(db, block.result.parent_block_hash);
 
-    const blockTxs = await getBlockTransactionsFromDataStore(block.result.hash, db);
-
-    const result: RosettaBlock = {
-      block_identifier: { index: block.result.height, hash: block.result.hash },
-      parent_block_identifier: {
-        index: parent_block.found ? parent_block.result.height : 0,
-        hash: parent_block.found ? parent_block.result.hash : '',
-      },
-      timestamp: block.result.burn_block_time,
-      transactions: blockTxs.found ? blockTxs.result : [],
-    };
-
-    res.json(result);
+    res.json(block.result);
   });
 
   router.postAsync('/transaction', async (req, res) => {

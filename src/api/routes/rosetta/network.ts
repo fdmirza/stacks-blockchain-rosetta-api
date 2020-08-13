@@ -2,7 +2,7 @@ import * as express from 'express';
 import { addAsync, RouterWithAsync } from '@awaitjs/express';
 import { DataStore } from '../../../datastore/common';
 import {
-    getBlockFromDataStore,
+    getBlockFromDataStore, getRosettaBlockFromDataStore,
 
 
 } from '../../controllers/db-controller';
@@ -27,13 +27,13 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
 
     router.postAsync('/status', async (req, res) => {
 
-        const block = await getBlockFromDataStore(db);
+        const block = await getRosettaBlockFromDataStore(db);
         if (!block.found) {
             res.status(404).json({ error: `cannot find block` });
             return;
         }
 
-        const genesis = await getBlockFromDataStore(db, undefined, 1);
+        const genesis = await getRosettaBlockFromDataStore(db, undefined, 1);
 
         if (!genesis.found) {
             res.status(404).json({ error: `cannot find genesis block` });
@@ -43,13 +43,13 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
 
         const respone = {
             current_block_identifier: {
-                index: block.result.height,
-                hash: block.result.hash
+                index: block.result.block_identifier.hash,
+                hash: block.result.block_identifier.index
             },
-            current_block_timestamp: block.result.burn_block_time * 1000,
+            current_block_timestamp: block.result.timestamp,
             genesis_block_identifier: {
-                index: genesis.result.height,
-                hash: genesis.result.hash
+                index: genesis.result.block_identifier.index,
+                hash: genesis.result.block_identifier.hash
             },
             peers: [
                 {
