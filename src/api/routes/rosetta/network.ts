@@ -40,11 +40,11 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
             return;
         }
 
-
+        // TODO : update hard-coded peer_id
         const respone = {
             current_block_identifier: {
-                index: block.result.block_identifier.hash,
-                hash: block.result.block_identifier.index
+                index: block.result.block_identifier.index,
+                hash: block.result.block_identifier.hash
             },
             current_block_timestamp: block.result.timestamp,
             genesis_block_identifier: {

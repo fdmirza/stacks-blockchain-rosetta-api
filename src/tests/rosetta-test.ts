@@ -275,8 +275,60 @@ describe('api tests', () => {
         index: 11,
         hash: "0x9912000000000000000000000000000000000000000000000000000000000000"
       },
-      timestamp: 123456,
+      timestamp: 123456000,
       transactions: []
+
+    };
+    client.release();
+    expect(JSON.parse(searchResult1.text)).toEqual(expectedResp1);
+  });
+
+  test('fetch network status', async () => {
+    const genesis: DbBlock = {
+      block_hash: "0x8912000000000000000000000000000000000000000000000000000000000000",
+      block_height: 1,
+      burn_block_time: 123456,
+      parent_block_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      index_block_hash: "0x1233000000000000000000000000000000000000000000000000000000000000",
+      parent_index_block_hash: "0x0000000000000000000000000000000000000000000000000000000000000000",
+      canonical: true,
+      parent_microblock: "0x0000000000000000000000000000000000000000000000000000000000000000"
+    };
+    const client = await db.pool.connect();
+    await db.updateBlock(client, genesis);
+
+    const block: DbBlock = {
+      block_hash: "0x9912000000000000000000000000000000000000000000000000000000000000",
+      block_height: 20,
+      burn_block_time: 123456,
+      parent_block_hash: "0x9913000000000000000000000000000000000000000000000000000000000000",
+      index_block_hash: "0x1133000000000000000000000000000000000000000000000000000000000000",
+      parent_index_block_hash: "0x1144000000000000000000000000000000000000000000000000000000000000",
+      canonical: true,
+      parent_microblock: "0x1133000000000000000000000000000000000000000000000000000000000000"
+    };
+    await db.updateBlock(client, block);
+    const searchResult1 = await supertest(api.server)
+      .post(`/rosetta/v1/network/status`)
+      .set('Content-Type', 'application/json');
+    expect(searchResult1.status).toBe(200);
+    expect(searchResult1.type).toBe('application/json');
+    // TODO : update hard-coded peer_id
+    const expectedResp1 = {
+
+      current_block_identifier: {
+        index: 20,
+        hash: "0x9912000000000000000000000000000000000000000000000000000000000000"
+      },
+      genesis_block_identifier: {
+        index: 1,
+        hash: "0x8912000000000000000000000000000000000000000000000000000000000000"
+      },
+      current_block_timestamp: 123456000,
+      peers: [{
+        peer_id: "0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5",
+        metadata: {}
+      }]
 
     };
     client.release();
