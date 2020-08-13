@@ -330,7 +330,7 @@ export interface RosettaMempoolTransactionListResponse {
   /**
    * meta data to support pagination
    */
-  meta_data?: {
+  metadata?: {
     /**
      * number of transactions returned
      */

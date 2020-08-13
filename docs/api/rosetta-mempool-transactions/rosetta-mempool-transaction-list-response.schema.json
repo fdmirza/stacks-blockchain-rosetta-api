@@ -3,7 +3,9 @@
   "type": "object",
   "title": "RosettaMempoolTransactionListResponse",
   "description": "The root schema comprises the entire JSON document.",
-  "required": ["transaction_identifiers"],
+  "required": [
+    "transaction_identifiers"
+  ],
   "properties": {
     "transaction_identifiers": {
       "type": "array",
@@ -12,7 +14,7 @@
         "$ref": "./rosetta-transaction-identifier.schema.json"
       }
     },
-    "meta_data": {
+    "metadata": {
       "type": "object",
       "description": "meta data to support pagination",
       "properties": {

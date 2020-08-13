@@ -29,12 +29,12 @@ export function createMempoolRouter(db: DataStore): RouterWithAsync {
     const transaction_identifiers = txResults.map(tx => {
       return { hash: tx.tx_id };
     });
-    const meta_data = {
+    const metadata = {
       limit: limit,
       total: total,
       offset: offset,
     };
-    const response: RosettaMempoolTransactionListResponse = { transaction_identifiers, meta_data };
+    const response: RosettaMempoolTransactionListResponse = { transaction_identifiers, metadata };
     res.json(response);
   });
 

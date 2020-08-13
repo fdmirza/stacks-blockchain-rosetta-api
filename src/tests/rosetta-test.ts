@@ -37,6 +37,7 @@ import {
 import { startApiServer, ApiServer } from '../api/init';
 import { PgDataStore, cycleMigrations, runMigrations } from '../datastore/postgres-store';
 import { PoolClient } from 'pg';
+import { RosettaBlock } from '@blockstack/stacks-blockchain-api-types';
 
 describe('api tests', () => {
   let db: PgDataStore;
@@ -103,12 +104,6 @@ describe('api tests', () => {
     expect(JSON.parse(searchResult1.text)).toEqual(expectedResp1);
   });
 
-  afterEach(async () => {
-    await new Promise(resolve => api.server.close(() => resolve()));
-    client.release();
-    await db?.close();
-    await runMigrations(undefined, 'down');
-  });
 
   test('fetch mempool transaction', async () => {
     const mempoolTx: DbMempoolTx = {
@@ -165,7 +160,7 @@ describe('api tests', () => {
             value: '1234',
             currency: {
               symbol: 'STX',
-              decimals: 18,
+              decimals: 6,
             },
           },
         },
@@ -182,7 +177,7 @@ describe('api tests', () => {
             value: '-5000',
             currency: {
               symbol: 'STX',
-              decimals: 18,
+              decimals: 6,
             },
           },
           coin_change: {
@@ -213,7 +208,7 @@ describe('api tests', () => {
             value: '5000',
             currency: {
               symbol: 'STX',
-              decimals: 18,
+              decimals: 6,
             },
           },
           coin_change: {
@@ -227,5 +222,71 @@ describe('api tests', () => {
     };
 
     expect(JSON.parse(searchResult1.text)).toEqual(expectedResp1);
+  });
+
+  test('fetch block', async () => {
+    const block: DbBlock = {
+      block_hash: "0x8912000000000000000000000000000000000000000000000000000000000000",
+      block_height: 12,
+      burn_block_time: 123456,
+      parent_block_hash: "0x9912000000000000000000000000000000000000000000000000000000000000",
+      index_block_hash: "0x1233000000000000000000000000000000000000000000000000000000000000",
+      parent_index_block_hash: "0x1244000000000000000000000000000000000000000000000000000000000000",
+      canonical: true,
+      parent_microblock: "0x1255000000000000000000000000000000000000000000000000000000000000"
+    };
+    const client = await db.pool.connect();
+    await db.updateBlock(client, block);
+
+    const parentBlock: DbBlock = {
+      block_hash: "0x9912000000000000000000000000000000000000000000000000000000000000",
+      block_height: 11,
+      burn_block_time: 123456,
+      parent_block_hash: "0x9913000000000000000000000000000000000000000000000000000000000000",
+      index_block_hash: "0x1133000000000000000000000000000000000000000000000000000000000000",
+      parent_index_block_hash: "0x1144000000000000000000000000000000000000000000000000000000000000",
+      canonical: true,
+      parent_microblock: "0x1133000000000000000000000000000000000000000000000000000000000000"
+    };
+    await db.updateBlock(client, parentBlock);
+    const searchResult1 = await supertest(api.server)
+      .post(`/rosetta/v1/block`)
+      .set('Content-Type', 'application/json').send(`{
+        "network_identifier": {
+            "blockchain": "blockstack",
+            "network": "testnet",
+            "sub_network_identifier": {
+                "network": "shard 1"
+            }
+        },
+        "block_identifier": {
+            "hash": "0x8912000000000000000000000000000000000000000000000000000000000000"
+        }
+    }`);
+    expect(searchResult1.status).toBe(200);
+    expect(searchResult1.type).toBe('application/json');
+    const expectedResp1: RosettaBlock = {
+
+      block_identifier: {
+        index: 12,
+        hash: "0x8912000000000000000000000000000000000000000000000000000000000000"
+      },
+      parent_block_identifier: {
+        index: 11,
+        hash: "0x9912000000000000000000000000000000000000000000000000000000000000"
+      },
+      timestamp: 123456,
+      transactions: []
+
+    };
+    client.release();
+    expect(JSON.parse(searchResult1.text)).toEqual(expectedResp1);
+  });
+
+  afterEach(async () => {
+    await new Promise(resolve => api.server.close(() => resolve()));
+    client.release();
+    await db?.close();
+    await runMigrations(undefined, 'down');
   });
 });
