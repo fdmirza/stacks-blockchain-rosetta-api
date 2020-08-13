@@ -214,11 +214,18 @@ export function parseDbEvent(dbEvent: DbEvent): TransactionEvent {
   }
 }
 
-export async function getBlockFromDataStore(
-  blockHash: string,
-  db: DataStore
+export async function getBlockFromDataStore(db: DataStore,
+  blockHash?: string, blockHeight?: number,
+
 ): Promise<{ found: true; result: Block } | { found: false }> {
-  const blockQuery = await db.getBlock(blockHash);
+
+  let query
+  if (!blockHash && !blockHeight) {
+    query = db.getCurrentBlock()
+  } else {
+    query = blockHeight ? db.getBlockByHeight(blockHeight) : db.getBlock(blockHash!);
+  }
+  const blockQuery = await query;
   if (!blockQuery.found) {
     return { found: false };
   }
@@ -242,7 +249,7 @@ export async function getBlockTransactionsFromDataStore(
   db: DataStore
 ): Promise<{ found: true; result: RosettaTransaction[] } | { found: false }> {
   const txsQuery = await db.getBlockTxsRows(indexBlockHash);
-  console.log("txsQuery", txsQuery)
+
   if (!txsQuery.found) {
     return { found: false };
   }

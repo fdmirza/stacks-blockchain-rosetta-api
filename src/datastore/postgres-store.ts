@@ -786,6 +786,42 @@ export class PgDataStore extends (EventEmitter as { new(): DataStoreEventEmitter
     return { found: true, result: block } as const;
   }
 
+  async getBlockByHeight(block_height: number) {
+    const result = await this.pool.query<BlockQueryResult>(
+      `
+      SELECT ${BLOCK_COLUMNS}
+      FROM blocks
+      WHERE block_height = $1
+      ORDER BY canonical DESC, block_height DESC
+      LIMIT 1
+      `,
+      [block_height]
+    );
+    if (result.rowCount === 0) {
+      return { found: false } as const;
+    }
+    const row = result.rows[0];
+    const block = this.parseBlockQueryResult(row);
+    return { found: true, result: block } as const;
+  }
+
+  async getCurrentBlock() {
+    const result = await this.pool.query<BlockQueryResult>(
+      `
+      SELECT ${BLOCK_COLUMNS}
+      FROM blocks
+      ORDER BY  block_height DESC
+      LIMIT 1
+      `
+    );
+    if (result.rowCount === 0) {
+      return { found: false } as const;
+    }
+    const row = result.rows[0];
+    const block = this.parseBlockQueryResult(row);
+    return { found: true, result: block } as const;
+  }
+
   async getBlocks({ limit, offset }: { limit: number; offset: number }) {
     const totalQuery = this.pool.query<{ count: number }>(`
       SELECT COUNT(*)::integer

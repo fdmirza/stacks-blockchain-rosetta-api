@@ -251,6 +251,8 @@ export interface DbSearchResult {
 
 export interface DataStore extends DataStoreEventEmitter {
   getBlock(blockHash: string): Promise<FoundOrNot<DbBlock>>;
+  getBlockByHeight(block_height: number): Promise<FoundOrNot<DbBlock>>;
+  getCurrentBlock(): Promise<FoundOrNot<DbBlock>>;
   getBlocks(args: {
     limit: number;
     offset: number;

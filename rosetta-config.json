@@ -1,7 +1,7 @@
 {
     "network": {
-        "blockchain": "Blockstack",
-        "network": "Testnet"
+        "blockchain": "blockstack",
+        "network": "testnet"
     },
     "online_url": "http://localhost:3999/rosetta/v1",
     "data_directory": "",
@@ -16,6 +16,8 @@
         "balance_tracking_disabled": true,
         "end_conditions": {
             "tip": true
-        }
+        },
+        "exempt_accounts": "",
+        "bootstrap_balances": "./bootstrap_balances.json"
     }
 }

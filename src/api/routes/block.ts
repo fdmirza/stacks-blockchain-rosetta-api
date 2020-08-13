@@ -25,7 +25,7 @@ export function createBlockRouter(db: DataStore): RouterWithAsync {
     const { results: blocks, total } = await db.getBlocks({ offset, limit });
     // TODO: fix duplicate pg queries
     const results = await Bluebird.mapSeries(blocks, async block => {
-      const blockQuery = await getBlockFromDataStore(block.block_hash, db);
+      const blockQuery = await getBlockFromDataStore(db, block.block_hash);
       if (!blockQuery.found) {
         throw new Error('unexpected block not found -- fix block enumeration query');
       }
@@ -43,7 +43,7 @@ export function createBlockRouter(db: DataStore): RouterWithAsync {
       return res.redirect('/extended/v1/block/0x' + block_hash);
     }
 
-    const block = await getBlockFromDataStore(block_hash, db);
+    const block = await getBlockFromDataStore(db, block_hash);
     if (!block.found) {
       res.status(404).json({ error: `cannot find block by hash ${block_hash}` });
       return;

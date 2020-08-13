@@ -45,7 +45,7 @@ export function createMempoolRouter(db: DataStore): RouterWithAsync {
       tx_id = '0x' + tx_id;
     }
     const mempoolTxQuery = await db.getMempoolTx(tx_id);
-    console.log('mempoolTxQuery', mempoolTxQuery);
+
     if (!mempoolTxQuery.found) {
       res.status(404).json({ error: `could not find transaction by ID ${tx_id}` });
       return;
