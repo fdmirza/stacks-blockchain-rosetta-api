@@ -1,4 +1,4 @@
-class RosettaConstants {
+export class RosettaConstants {
   static readonly blockchain = 'stacks';
   static readonly network = 'testnet';
 }

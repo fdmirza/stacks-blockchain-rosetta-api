@@ -5,17 +5,18 @@ import {
   getBlockFromDataStore,
   getRosettaBlockFromDataStore,
 } from '../../controllers/db-controller';
+import { RosettaConstants } from './constants';
+import { StacksCoreRpcClient } from '../../../core-rpc/client';
 
 export function createNetworkRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
-  router.use(express.json());
 
   router.postAsync('/list', async (req, res) => {
     const response = {
       network_identifiers: [
         {
-          blockchain: 'blockstack',
-          network: 'testnet',
+          blockchain: RosettaConstants.blockchain,
+          network: RosettaConstants.network,
         },
       ],
     };
@@ -37,8 +38,12 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
       return;
     }
 
+    const stacksCoreRpcClient = new StacksCoreRpcClient();
+    const neighbors = await stacksCoreRpcClient.getNeighbors();
+    console.log('Neighbors', neighbors.sample);
+
     // TODO : update hard-coded peer_id
-    const respone = {
+    const response = {
       current_block_identifier: {
         index: block.result.block_identifier.index,
         hash: block.result.block_identifier.hash,
@@ -56,7 +61,7 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
       ],
     };
 
-    res.json(respone);
+    res.json(response);
   });
 
   router.postAsync('/options', async (req, res) => {
