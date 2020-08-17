@@ -525,6 +525,34 @@ export interface RosettaTransaction {
 }
 
 /**
+ * A NetworkListResponse contains all NetworkIdentifiers that the node can serve information for.
+ */
+export interface RosettaNetworkListResponse {
+  /**
+   * The network_identifier specifies which network a particular object is associated with.
+   */
+  network_identifiers: NetworkIdentifier[];
+}
+
+/**
+ * NetworkStatusResponse contains basic information about the node's view of a blockchain network. It is assumed that any BlockIdentifier.Index less than or equal to CurrentBlockIdentifier.Index can be queried. If a Rosetta implementation prunes historical state, it should populate the optional oldest_block_identifier field with the oldest block available to query. If this is not populated, it is assumed that the genesis_block_identifier is the oldest queryable block. If a Rosetta implementation performs some pre-sync before it is possible to query blocks, sync_status should be populated so that clients can still monitor healthiness. Without this field, it may appear that the implementation is stuck syncing and needs to be terminated.
+ */
+export interface RosettaNetworkStatusResponse {
+  current_block_identifier: RosettaBlockIdentifier;
+  /**
+   * The timestamp of the block in milliseconds since the Unix Epoch. The timestamp is stored in milliseconds because some blockchains produce blocks more often than once a second.
+   */
+  current_block_timestamp: number;
+  genesis_block_identifier: RosettaGenesisBlockIdentifier;
+  oldest_block_identifier?: RosettaOldestBlockIdentifier;
+  sync_status?: RosettaSyncStatus;
+  /**
+   * Peers information
+   */
+  peers: RosettaPeers[];
+}
+
+/**
  * GET request that returns transactions
  */
 export interface MempoolTransactionListResponse {
@@ -800,6 +828,74 @@ export type MempoolTransaction =
   | MempoolPoisonMicroblockTransaction
   | MempoolCoinbaseTransaction;
 
+/**
+ * The network_identifier specifies which network a particular object is associated with.
+ */
+export interface NetworkIdentifier {
+  /**
+   * Blockchain name
+   */
+  blockchain: string;
+  /**
+   * If a blockchain has a specific chain-id or network identifier, it should go in this field. It is up to the client to determine which network-specific identifier is mainnet or testnet.
+   */
+  network: string;
+  /**
+   * In blockchains with sharded state, the SubNetworkIdentifier is required to query some object on a specific shard. This identifier is optional for all non-sharded blockchains.
+   */
+  sub_network_identifier?: {
+    /**
+     * Netowork name
+     */
+    network: string;
+    /**
+     * Meta data from subnetwork identifier
+     */
+    metadata?: {
+      /**
+       * producer
+       */
+      producer: string;
+      [k: string]: unknown | undefined;
+    };
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * AA Peer is a representation of a node's peer.
+ */
+export interface RosettaPeers {
+  /**
+   * peer id
+   */
+  peer_id: string;
+  /**
+   * meta data
+   */
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * SyncStatus is used to provide additional context about an implementation's sync status. It is often used to indicate that an implementation is healthy when it cannot be queried until some sync phase occurs. If an implementation is immediately queryable, this model is often not populated.
+ */
+export interface RosettaSyncStatus {
+  /**
+   * CurrentIndex is the index of the last synced block in the current stage.
+   */
+  current_index: number;
+  /**
+   * TargetIndex is the index of the block that the implementation is attempting to sync to in the current stage.
+   */
+  target_index?: number;
+  /**
+   * Stage is the phase of the sync process.
+   */
+  stage?: string;
+}
+
 export interface PostConditionStx {
   principal: PostConditionPrincipal;
   condition_code: PostConditionFungibleConditionCode;
@@ -882,6 +978,48 @@ export type PostConditionType = "stx" | "non_fungible" | "fungible";
  * Post-conditionscan limit the damage done to a user's assets
  */
 export type PostCondition = PostConditionStx | PostConditionFungible | PostConditionNonFungible;
+
+/**
+ * The block_identifier uniquely identifies a block in a particular network.
+ */
+export interface RosettaBlockIdentifier {
+  /**
+   * This is also known as the block height.
+   */
+  index: number;
+  /**
+   * Block hash
+   */
+  hash: string;
+}
+
+/**
+ * The block_identifier uniquely identifies a block in a particular network.
+ */
+export interface RosettaGenesisBlockIdentifier {
+  /**
+   * This is also known as the block height.
+   */
+  index: number;
+  /**
+   * Block hash
+   */
+  hash: string;
+}
+
+/**
+ * The block_identifier uniquely identifies a block in a particular network.
+ */
+export interface RosettaOldestBlockIdentifier {
+  /**
+   * This is also known as the block height.
+   */
+  index: number;
+  /**
+   * Block hash
+   */
+  hash: string;
+}
 
 export type TransactionEventAssetType = "transfer" | "mint" | "burn";
 
