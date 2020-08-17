@@ -7,12 +7,13 @@ import {
 } from '../../controllers/db-controller';
 import { RosettaConstants } from './constants';
 import { StacksCoreRpcClient } from '../../../core-rpc/client';
+import { RosettaNetworkListResponse } from '@blockstack/stacks-blockchain-api-types';
 
 export function createNetworkRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
 
   router.postAsync('/list', async (req, res) => {
-    const response = {
+    const response: RosettaNetworkListResponse = {
       network_identifiers: [
         {
           blockchain: RosettaConstants.blockchain,
@@ -67,7 +68,7 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
   router.postAsync('/options', async (req, res) => {
     res.json({
       version: {
-        rosetta_version: '1.2.5',
+        rosetta_version: RosettaConstants.rosettaVersion,
         node_version: '1.0.2',
         middleware_version: '0.2.7',
         metadata: {},
@@ -78,8 +79,18 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
             status: 'SUCCESS',
             successful: true,
           },
+          {
+            status: 'FAILURE',
+            successful: false,
+          },
         ],
-        operation_types: ['TRANSFER'],
+        operation_types: [
+          'token_transfer',
+          'contract_call',
+          'smart_contract',
+          'coinbase',
+          'poison_microblock',
+        ],
         errors: [
           {
             code: 12,
