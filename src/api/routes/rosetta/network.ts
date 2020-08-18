@@ -28,7 +28,7 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
     res.json(response);
   });
 
-  router.postAsync('/status', async (req, res) => {
+  router.getAsync('/status', async (_, res) => {
     const block = await getRosettaBlockFromDataStore(db);
     if (!block.found) {
       res.status(404).json({ error: `cannot find block` });
@@ -76,7 +76,7 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
     res.json(response);
   });
 
-  router.postAsync('/options', async (req, res) => {
+  router.getAsync('/options', async (_, res) => {
     const response: RosettaNetworkOptionsResponse = {
       version: {
         rosetta_version: RosettaConstants.rosettaVersion,
