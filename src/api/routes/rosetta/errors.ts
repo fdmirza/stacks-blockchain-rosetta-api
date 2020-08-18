@@ -58,7 +58,7 @@ export const RosettaErrors = {
     message: 'Invalid blockchain.',
     retriable: true,
   },
-  unknowError: {
+  unknownError: {
     code: 612,
     message: 'Unknown error.',
     retriable: false,

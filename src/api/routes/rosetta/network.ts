@@ -1,13 +1,16 @@
 import * as express from 'express';
 import { addAsync, RouterWithAsync } from '@awaitjs/express';
 import { DataStore } from '../../../datastore/common';
-import {
-  getBlockFromDataStore,
-  getRosettaBlockFromDataStore,
-} from '../../controllers/db-controller';
+import { getRosettaBlockFromDataStore } from '../../controllers/db-controller';
 import { RosettaConstants } from './constants';
-import { StacksCoreRpcClient } from '../../../core-rpc/client';
-import { RosettaNetworkListResponse } from '@blockstack/stacks-blockchain-api-types';
+import { StacksCoreRpcClient, Neighbor } from '../../../core-rpc/client';
+import {
+  RosettaNetworkListResponse,
+  RosettaNetworkOptionsResponse,
+  RosettaNetworkStatusResponse,
+  RosettaPeers,
+} from '@blockstack/stacks-blockchain-api-types';
+import { RosettaErrors } from './errors';
 
 export function createNetworkRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -40,11 +43,24 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
     }
 
     const stacksCoreRpcClient = new StacksCoreRpcClient();
-    const neighbors = await stacksCoreRpcClient.getNeighbors();
-    console.log('Neighbors', neighbors.sample);
+    const neighborsResp = await stacksCoreRpcClient.getNeighbors();
+    // TODO: Check if we have response or not
+    const neighbors: Neighbor[] = [];
+    neighbors.push(...neighborsResp.inbound, ...neighborsResp.outbound);
+    const peers: RosettaPeers[] = neighbors
+      .filter(
+        (neighbor, i, arr) =>
+          arr.findIndex(
+            currentNeighbor => currentNeighbor.public_key_hash === neighbor.public_key_hash
+          ) === i
+      )
+      .map(neighbor => {
+        return {
+          peer_id: neighbor.public_key_hash,
+        };
+      });
 
-    // TODO : update hard-coded peer_id
-    const response = {
+    const response: RosettaNetworkStatusResponse = {
       current_block_identifier: {
         index: block.result.block_identifier.index,
         hash: block.result.block_identifier.hash,
@@ -54,23 +70,18 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
         index: genesis.result.block_identifier.index,
         hash: genesis.result.block_identifier.hash,
       },
-      peers: [
-        {
-          peer_id: '0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5',
-          metadata: {},
-        },
-      ],
+      peers,
     };
 
     res.json(response);
   });
 
   router.postAsync('/options', async (req, res) => {
-    res.json({
+    const response: RosettaNetworkOptionsResponse = {
       version: {
         rosetta_version: RosettaConstants.rosettaVersion,
-        node_version: '1.0.2',
-        middleware_version: '0.2.7',
+        node_version: process.version,
+        middleware_version: process.env.npm_package_version,
         metadata: {},
       },
       allow: {
@@ -92,19 +103,25 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
           'poison_microblock',
         ],
         errors: [
-          {
-            code: 12,
-            message: 'Invalid account format',
-            retriable: true,
-            details: {
-              address: '0x1dcc4de8dec75d7aab85b567b6',
-              error: 'not base64',
-            },
-          },
+          RosettaErrors.insufficientFunds,
+          RosettaErrors.invalidAccount,
+          RosettaErrors.invalidBlockHash,
+          RosettaErrors.accountEmpty,
+          RosettaErrors.invalidBlockIndex,
+          RosettaErrors.blockNotFound,
+          RosettaErrors.invalidBlockHash,
+          RosettaErrors.transactionNotFound,
+          RosettaErrors.invalidTransactionHash,
+          RosettaErrors.invalidParams,
+          RosettaErrors.invalidNetwork,
+          RosettaErrors.invalidBlockchain,
+          RosettaErrors.unknownError,
         ],
         historical_balance_lookup: true,
       },
-    });
+    };
+
+    return res.json(response);
   });
 
   return router;
