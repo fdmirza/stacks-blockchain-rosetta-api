@@ -535,6 +535,58 @@ export interface RosettaNetworkListResponse {
 }
 
 /**
+ * NetworkOptionsResponse contains information about the versioning of the node and the allowed operation statuses, operation types, and errors.
+ */
+export interface RosettaNetworkOptionsResponse {
+  /**
+   * The Version object is utilized to inform the client of the versions of different components of the Rosetta implementation.
+   */
+  version: {
+    /**
+     * The rosetta_version is the version of the Rosetta interface the implementation adheres to. This can be useful for clients looking to reliably parse responses.
+     */
+    rosetta_version: string;
+    /**
+     * The node_version is the canonical version of the node runtime. This can help clients manage deployments.
+     */
+    node_version: string;
+    /**
+     * When a middleware server is used to adhere to the Rosetta interface, it should return its version here. This can help clients manage deployments.
+     */
+    middleware_version?: string;
+    /**
+     * Any other information that may be useful about versioning of dependent services should be returned here.
+     */
+    metadata?: {
+      [k: string]: unknown | undefined;
+    };
+    [k: string]: unknown | undefined;
+  };
+  /**
+   * Allow specifies supported Operation status, Operation types, and all possible error statuses. This Allow object is used by clients to validate the correctness of a Rosetta Server implementation. It is expected that these clients will error if they receive some response that contains any of the above information that is not specified here.
+   */
+  allow: {
+    /**
+     * All Operation.Status this implementation supports. Any status that is returned during parsing that is not listed here will cause client validation to error.
+     */
+    operation_statuses: RosettaOperationStatus[];
+    /**
+     * All Operation.Type this implementation supports. Any type that is returned during parsing that is not listed here will cause client validation to error.
+     */
+    operation_types: string[];
+    /**
+     * All Errors that this implementation could return. Any error that is returned during parsing that is not listed here will cause client validation to error.
+     */
+    errors: RosettaError[];
+    /**
+     * Any Rosetta implementation that supports querying the balance of an account at any height in the past should set this to true.
+     */
+    historical_balance_lookup: boolean;
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
  * NetworkStatusResponse contains basic information about the node's view of a blockchain network. It is assumed that any BlockIdentifier.Index less than or equal to CurrentBlockIdentifier.Index can be queried. If a Rosetta implementation prunes historical state, it should populate the optional oldest_block_identifier field with the oldest block available to query. If this is not populated, it is assumed that the genesis_block_identifier is the oldest queryable block. If a Rosetta implementation performs some pre-sync before it is possible to query blocks, sync_status should be populated so that clients can still monitor healthiness. Without this field, it may appear that the implementation is stuck syncing and needs to be terminated.
  */
 export interface RosettaNetworkStatusResponse {
@@ -613,6 +665,32 @@ export interface Block {
    * List of transactions included in the block
    */
   txs: string[];
+}
+
+/**
+ * Instead of utilizing HTTP status codes to describe node errors (which often do not have a good analog), rich errors are returned using this object. Both the code and message fields can be individually used to correctly identify an error. Implementations MUST use unique values for both fields.
+ */
+export interface RosettaError {
+  /**
+   * Code is a network-specific error code. If desired, this code can be equivalent to an HTTP status code.
+   */
+  code: number;
+  /**
+   * Message is a network-specific error message. The message MUST NOT change for a given code. In particular, this means that any contextual information should be included in the details field.
+   */
+  message: string;
+  /**
+   * An error is retriable if the same request may succeed if submitted again.
+   */
+  retriable: boolean;
+  /**
+   * Often times it is useful to return context specific to the request that caused the error (i.e. a sample of the stack trace or impacted account) in addition to the standard error message.
+   */
+  details?: {
+    address?: string;
+    error?: string;
+    [k: string]: unknown | undefined;
+  };
 }
 
 /**
@@ -876,6 +954,20 @@ export interface RosettaPeers {
   metadata?: {
     [k: string]: unknown | undefined;
   };
+}
+
+/**
+ * OperationStatus is utilized to indicate which Operation status are considered successful.
+ */
+export interface RosettaOperationStatus {
+  /**
+   * The status is the network-specific status of the operation.
+   */
+  status: string;
+  /**
+   * An Operation is considered successful if the Operation.Amount should affect the Operation.Account. Some blockchains (like Bitcoin) only include successful operations in blocks but other blockchains (like Ethereum) include unsuccessful operations that incur a fee. To reconcile the computed balance from the stream of Operations, it is critical to understand which Operation.Status indicate an Operation is successful and should affect an Account.
+   */
+  successful: boolean;
 }
 
 /**
