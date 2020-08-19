@@ -2082,6 +2082,33 @@ export class PgDataStore extends (EventEmitter as { new(): DataStoreEventEmitter
     };
   }
   
+  async getRecentEventBlockForAddress(
+    stxAddress: string
+  ): Promise<{ blockHeight: number; blockHash: string }> {
+    const result = await this.pool.query<{
+      index_block_hash: Buffer | null;
+      block_height: number | null;
+    }>(
+      `
+      SELECT index_block_hash, block_height 
+        from stx_events 
+        where (sender = $1 OR recipient = $1) ORDER BY block_height DESC limit 1
+      `,
+      [stxAddress]
+    );
+
+    const blockHeight = result.rows[0].block_height ?? 0;
+    let blockHash: string = '';
+
+    if (result.rows[0].index_block_hash) {
+      blockHash = bufferToHexPrefixString(result.rows[0].index_block_hash);
+    }
+    return {
+      blockHeight,
+      blockHash,
+    };
+  }
+  
   async close(): Promise<void> {
     await this.pool.end();
   }

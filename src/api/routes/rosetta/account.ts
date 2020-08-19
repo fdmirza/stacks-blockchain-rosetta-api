@@ -4,6 +4,7 @@ import { DataStore } from '../../../datastore/common';
 import { RosettaConstants } from './constants';
 import { RosettaErrors } from './errors';
 import { isValidPrincipal } from '../../../helpers';
+import { RosettaAccountBalanceResponse } from '@blockstack/stacks-blockchain-api-types';
 
 export function createAccountRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -45,29 +46,42 @@ export function createAccountRouter(db: DataStore): RouterWithAsync {
 
     const blockIdentifier = req.body.block_identifier;
     let balance: bigint = BigInt(0);
+    let index: number = 0;
+    let hash: string = '';
 
-    if (!blockIdentifier) {
+    if (blockIdentifier == null) {
       const result = await db.getStxBalance(stxAddress);
       balance = result.balance;
-    }
-
-    if (blockIdentifier.index && blockIdentifier.hash) {
+      const { blockHeight, blockHash } = await db.getRecentEventBlockForAddress(stxAddress);
+      index = blockHeight;
+      hash = blockHash;
+    } else if (blockIdentifier.index && blockIdentifier.hash) {
       const result = await db.getStxBalanceAtBlock(stxAddress, blockIdentifier.index);
       balance = result.balance;
+      index = blockIdentifier.index;
+      hash = blockIdentifier.hash;
     } else {
       res.status(400).json(RosettaErrors.invalidBlockIdentifier);
     }
 
-    // Get balance info for STX token
-    // const { balance, totalSent, totalReceived } = await db.getStxBalanceAtBlock(stxAddress);
-
-    const response = {
-      network_identifiers: [
+    const response: RosettaAccountBalanceResponse = {
+      block_identifier: {
+        index,
+        hash,
+      },
+      balances: [
         {
-          blockchain: balance.toString(),
-          network: 'adf',
+          value: balance.toString(),
+          currency: {
+            symbol: 'STX',
+            decimals: 8,
+          },
         },
       ],
+      coins: [],
+      metadata: {
+        sequence_number: 0,
+      },
     };
 
     res.json(response);

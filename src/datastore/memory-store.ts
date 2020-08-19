@@ -384,4 +384,11 @@ export class MemoryDataStore extends (EventEmitter as { new(): DataStoreEventEmi
   ): Promise<{ balance: bigint; totalSent: bigint; totalReceived: bigint }> {
     throw new Error('not yet implemented');
   }
+  
+  getRecentEventBlockForAddress(
+    stxAddress: string
+  ): Promise<{ blockHeight: number; blockHash: string }> {
+    throw new Error('not yet implemented');
+  }
+
 }
