@@ -21,6 +21,7 @@ import { getTxFromDataStore } from './controllers/db-controller';
 import { createMempoolRouter } from './routes/rosetta/mempool';
 import { createRosettaBlockRouter } from './routes/rosetta/block';
 import { createNetworkRouter } from './routes/rosetta/network';
+import { createAccountRouter } from './routes/rosetta/account';
 
 export interface ApiServer {
   expressApp: ExpressWithAsync;
@@ -88,9 +89,11 @@ export async function startApiServer(
     (() => {
       const router = addAsync(express.Router());
       router.use(cors());
+      router.use(express.json());
       router.use('/mempool', createMempoolRouter(datastore));
       router.use('/block', createRosettaBlockRouter(datastore));
       router.use('/network', createNetworkRouter(datastore));
+      router.use('/account', createAccountRouter(datastore));
       router.use('/status', (req, res) => res.status(200).json({ status: 'ready' }));
       return router;
     })()

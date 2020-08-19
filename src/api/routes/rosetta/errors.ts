@@ -63,4 +63,19 @@ export const RosettaErrors = {
     message: 'Unknown error.',
     retriable: false,
   },
+  emptyNetworkIdentifier: {
+    code: 613,
+    message: 'Network identifier object is null',
+    retriable: true,
+  },
+  emptyAccountIdentifier: {
+    code: 614,
+    message: 'Account identifier object is null',
+    retriable: true,
+  },
+  invalidBlockIdentifier: {
+    code: 615,
+    message: 'Block identifier is null',
+    retriable: true,
+  },
 };

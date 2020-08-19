@@ -320,6 +320,12 @@ export interface DataStore extends DataStoreEventEmitter {
   searchPrincipal(args: { principal: string }): Promise<FoundOrNot<DbSearchResult>>;
 
   insertFaucetRequest(faucetRequest: DbFaucetRequest): Promise<void>;
+
+  getStxBalanceAtBlock(
+    stxAddress: string,
+    // blockHash: string,
+    blockHeight: number
+  ): Promise<{ balance: bigint; totalSent: bigint; totalReceived: bigint }>;
 }
 
 export function getAssetEventId(event_index: number, event_tx_id: string): string {

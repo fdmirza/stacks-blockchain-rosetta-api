@@ -376,4 +376,12 @@ export class MemoryDataStore extends (EventEmitter as { new(): DataStoreEventEmi
       .slice(0, 5);
     return Promise.resolve({ results: request });
   }
+
+  getStxBalanceAtBlock(
+    stxAddress: string,
+    // blockHash: string,
+    blockHeight: number
+  ): Promise<{ balance: bigint; totalSent: bigint; totalReceived: bigint }> {
+    throw new Error('not yet implemented');
+  }
 }
