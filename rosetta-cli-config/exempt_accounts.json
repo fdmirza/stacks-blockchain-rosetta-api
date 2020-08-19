@@ -1,0 +1,20 @@
+[
+    {
+        "account_identifier": {
+            "address": "ST11NJTTKGVT6D1HY4NJRVQWMQM7TVAR091EJ8P21"
+        },
+        "currency": {
+            "symbol": "STX",
+            "decimals": 6
+        }
+    },
+    {
+        "account_identifier": {
+            "address": "ST11NJTTKGVT6D1HY4NJRVQWMQM7TVAR091EJ8P22"
+        },
+        "currency": {
+            "symbol": "STX",
+            "decimals": 6
+        }
+    }
+]

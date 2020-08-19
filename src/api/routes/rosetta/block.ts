@@ -17,6 +17,7 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
   router.use(express.json());
   router.postAsync('/', async (req, res) => {
+    console.log(JSON.stringify(req.body));
     let block_hash = req.body.block_identifier.hash;
     const index = req.body.block_identifier.index;
     if (block_hash && !has0xPrefix(block_hash)) {
@@ -26,11 +27,15 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
     const block = await getRosettaBlockFromDataStore(db, block_hash, index);
 
     if (!block.found) {
-      res.status(404).json({ error: `cannot find block by hash ${block_hash}` });
+      res.status(404).json({
+        code: 12,
+        message: "cannot find block by hash",
+        retriable: false
+      });
       return;
     }
 
-    res.json(block.result);
+    res.json({ block: block.result });
   });
 
   router.postAsync('/transaction', async (req, res) => {

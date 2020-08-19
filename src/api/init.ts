@@ -22,6 +22,7 @@ import { createMempoolRouter } from './routes/rosetta/mempool';
 import { createRosettaBlockRouter } from './routes/rosetta/block';
 import { createNetworkRouter } from './routes/rosetta/network';
 
+
 export interface ApiServer {
   expressApp: ExpressWithAsync;
   server: Server;

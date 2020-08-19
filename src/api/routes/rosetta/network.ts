@@ -50,14 +50,7 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
             genesis_block_identifier: {
                 index: genesis.result.block_identifier.index,
                 hash: genesis.result.block_identifier.hash
-            },
-            peers: [
-                {
-                    peer_id: "0x52bc44d5378309ee2abf1539bf71de1b7d7be3b5",
-                    metadata: {}
-
-                }
-            ]
+            }
         }
 
         res.json(respone)
@@ -75,22 +68,30 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
             "allow": {
                 "operation_statuses": [
                     {
-                        "status": "SUCCESS",
+                        "status": "success",
                         "successful": true
                     }
                 ],
                 "operation_types": [
-                    "TRANSFER"
+                    'token_transfer',
+                    'contract_call',
+                    'smart_contract',
+                    'coinbase',
+                    'poison_microblock',
                 ],
                 "errors": [
                     {
-                        "code": 12,
+                        "code": 11,
                         "message": "Invalid account format",
                         "retriable": true,
                         "details": {
                             "address": "0x1dcc4de8dec75d7aab85b567b6",
                             "error": "not base64"
                         }
+                    }, {
+                        "code": 12,
+                        "message": "cannot find block by hash",
+                        "retriable": false,
                     }
                 ],
                 "historical_balance_lookup": true

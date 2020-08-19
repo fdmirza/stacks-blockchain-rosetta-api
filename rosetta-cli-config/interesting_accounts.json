@@ -1,0 +1,47 @@
+[
+    {
+        "account_identifier": {
+            "address": "ST11NJTTKGVT6D1HY4NJRVQWMQM7TVAR091EJ8P23"
+        },
+        "currency": {
+            "symbol": "STX",
+            "decimals": 6
+        }
+    },
+    {
+        "account_identifier": {
+            "address": "ST11NJTTKGVT6D1HY4NJRVQWMQM7TVAR091EJ8P24"
+        },
+        "currency": {
+            "symbol": "STX",
+            "decimals": 6
+        }
+    },
+    {
+        "account_identifier": {
+            "address": "ST11NJTTKGVT6D1HY4NJRVQWMQM7TVAR091EJ8P24"
+        },
+        "currency": {
+            "symbol": "STX",
+            "decimals": 6
+        }
+    },
+    {
+        "account_identifier": {
+            "address": "ST11NJTTKGVT6D1HY4NJRVQWMQM7TVAR091EJ8P26"
+        },
+        "currency": {
+            "symbol": "STX",
+            "decimals": 6
+        }
+    },
+    {
+        "account_identifier": {
+            "address": "ST11NJTTKGVT6D1HY4NJRVQWMQM7TVAR091EJ8P27"
+        },
+        "currency": {
+            "symbol": "STX",
+            "decimals": 6
+        }
+    }
+]
