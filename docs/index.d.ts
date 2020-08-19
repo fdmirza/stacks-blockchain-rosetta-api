@@ -175,6 +175,28 @@ export interface RunFaucetResponse {
 }
 
 /**
+ * An AccountBalanceResponse is returned on the /account/balance endpoint. If an account has a balance for each AccountIdentifier describing it (ex: an ERC-20 token balance on a few smart contracts), an account balance request must be made with each AccountIdentifier.
+ */
+export interface RosettaAccountBalanceResponse {
+  block_identifier: RosettaBlockIdentifier;
+  /**
+   * A single account balance may have multiple currencies
+   */
+  balances: RosettaAmount[];
+  /**
+   * If a blockchain is UTXO-based, all unspent Coins owned by an account_identifier should be returned alongside the balance. It is highly recommended to populate this field so that users of the Rosetta API implementation don't need to maintain their own indexer to track their UTXOs.
+   */
+  coins: RosettaCoin[];
+  /**
+   * Account-based blockchains that utilize a nonce or sequence number should include that number in the metadata. This number could be unique to the identifier or global across the account address.
+   */
+  metadata: {
+    sequence_number: number;
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
  * The block_identifier uniquely identifies a block in a particular network.
  */
 export interface RosettaBlockIdentifier {
@@ -255,23 +277,6 @@ export interface RosettaAccount {
 }
 
 /**
- * Amount is some Value of a Currency. It is considered invalid to specify a Value without a Currency.
- */
-export interface RosettaAmount {
-  /**
-   * Value of the transaction in atomic units represented as an arbitrary-sized signed integer. For example, 1 BTC would be represented by a value of 100000000.
-   */
-  value: string;
-  currency: RosettaCurrency;
-  /**
-   * An explanation about the purpose of this instance.
-   */
-  metadata?: {
-    [k: string]: unknown | undefined;
-  };
-}
-
-/**
  * CoinChange is used to represent a change in state of a some coin identified by a coin_identifier. This object is part of the Operation model and must be populated for UTXO-based blockchains. Coincidentally, this abstraction of UTXOs allows for supporting both account-based transfers and UTXO-based transfers on the same blockchain (when a transfer is account-based, don't populate this model).
  */
 export interface RosettaCoinChange {
@@ -289,26 +294,6 @@ export interface RosettaCoinChange {
    * CoinActions are different state changes that a Coin can undergo. When a Coin is created, it is coin_created. When a Coin is spent, it is coin_spent. It is assumed that a single Coin cannot be created or spent more than once.
    */
   coin_action: "coin_created" | "coin_spent";
-}
-
-/**
- * Currency is composed of a canonical Symbol and Decimals. This Decimals value is used to convert an Amount.Value from atomic units (Satoshis) to standard units (Bitcoins).
- */
-export interface RosettaCurrency {
-  /**
-   * Canonical symbol associated with a currency.
-   */
-  symbol: string;
-  /**
-   * Number of decimal places in the standard unit representation of the amount. For example, BTC has 8 decimals. Note that it is not possible to represent the value of some currency in atomic units that is not base 10.
-   */
-  decimals: number;
-  /**
-   * Any additional information related to the currency itself. For example, it would be useful to populate this object with the contract address of an ERC-20 token.
-   */
-  metadata?: {
-    [k: string]: unknown | undefined;
-  };
 }
 
 /**
@@ -1070,6 +1055,60 @@ export type PostConditionType = "stx" | "non_fungible" | "fungible";
  * Post-conditionscan limit the damage done to a user's assets
  */
 export type PostCondition = PostConditionStx | PostConditionFungible | PostConditionNonFungible;
+
+/**
+ * Amount is some Value of a Currency. It is considered invalid to specify a Value without a Currency.
+ */
+export interface RosettaAmount {
+  /**
+   * Value of the transaction in atomic units represented as an arbitrary-sized signed integer. For example, 1 BTC would be represented by a value of 100000000.
+   */
+  value: string;
+  currency: RosettaCurrency;
+  /**
+   * An explanation about the purpose of this instance.
+   */
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * If a blockchain is UTXO-based, all unspent Coins owned by an account_identifier should be returned alongside the balance. It is highly recommended to populate this field so that users of the Rosetta API implementation don't need to maintain their own indexer to track their UTXOs.
+ */
+export interface RosettaCoin {
+  /**
+   * CoinIdentifier uniquely identifies a Coin.
+   */
+  coin_identifier: {
+    /**
+     * Identifier should be populated with a globally unique identifier of a Coin. In Bitcoin, this identifier would be transaction_hash:index.
+     */
+    identifier: string;
+    [k: string]: unknown | undefined;
+  };
+  amount: RosettaAmount;
+}
+
+/**
+ * Currency is composed of a canonical Symbol and Decimals. This Decimals value is used to convert an Amount.Value from atomic units (Satoshis) to standard units (Bitcoins).
+ */
+export interface RosettaCurrency {
+  /**
+   * Canonical symbol associated with a currency.
+   */
+  symbol: string;
+  /**
+   * Number of decimal places in the standard unit representation of the amount. For example, BTC has 8 decimals. Note that it is not possible to represent the value of some currency in atomic units that is not base 10.
+   */
+  decimals: number;
+  /**
+   * Any additional information related to the currency itself. For example, it would be useful to populate this object with the contract address of an ERC-20 token.
+   */
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
 
 /**
  * The block_identifier uniquely identifies a block in a particular network.
