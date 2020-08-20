@@ -15,7 +15,7 @@ import { RosettaErrors } from './errors';
 export function createNetworkRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
 
-  router.postAsync('/list', async (req, res) => {
+  router.postAsync('/list', (req, res) => {
     const response: RosettaNetworkListResponse = {
       network_identifiers: [
         {
@@ -44,21 +44,19 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
 
     const stacksCoreRpcClient = new StacksCoreRpcClient();
     const neighborsResp = await stacksCoreRpcClient.getNeighbors();
-    // TODO: Check if we have response or not
+
     const neighbors: Neighbor[] = [];
     neighbors.push(...neighborsResp.inbound, ...neighborsResp.outbound);
-    const peers: RosettaPeers[] = neighbors
-      .filter(
-        (neighbor, i, arr) =>
-          arr.findIndex(
-            currentNeighbor => currentNeighbor.public_key_hash === neighbor.public_key_hash
-          ) === i
-      )
-      .map(neighbor => {
-        return {
-          peer_id: neighbor.public_key_hash,
-        };
-      });
+
+    const set_of_peer_ids = new Set(
+      neighbors.map(neighbor => {
+        return neighbor.public_key_hash;
+      })
+    );
+
+    const peers = [...set_of_peer_ids].map(peerId => {
+      return { peer_id: peerId };
+    });
 
     const response: RosettaNetworkStatusResponse = {
       current_block_identifier: {
@@ -76,7 +74,7 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
     res.json(response);
   });
 
-  router.postAsync('/options', async (_, res) => {
+  router.getAsync('/options', (_, res) => {
     const response: RosettaNetworkOptionsResponse = {
       version: {
         rosetta_version: RosettaConstants.rosettaVersion,
@@ -93,7 +91,8 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
           {
             status: 'pending',
             successful: true,
-          }, {
+          },
+          {
             status: 'abort_by_response',
             successful: false,
           },

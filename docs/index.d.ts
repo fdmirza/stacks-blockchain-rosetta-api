@@ -175,6 +175,15 @@ export interface RunFaucetResponse {
 }
 
 /**
+ * An AccountBalanceRequest is utilized to make a balance request on the /account/balance endpoint. If the block_identifier is populated, a historical balance query should be performed.
+ */
+export interface RosettaAccountBalanceRequest {
+  network_identifier: NetworkIdentifier;
+  account_identifier: RosettaAccount;
+  block_identifier?: RosettaBlockIdentifier;
+}
+
+/**
  * An AccountBalanceResponse is returned on the /account/balance endpoint. If an account has a balance for each AccountIdentifier describing it (ex: an ERC-20 token balance on a few smart contracts), an account balance request must be made with each AccountIdentifier.
  */
 export interface RosettaAccountBalanceResponse {
@@ -186,11 +195,11 @@ export interface RosettaAccountBalanceResponse {
   /**
    * If a blockchain is UTXO-based, all unspent Coins owned by an account_identifier should be returned alongside the balance. It is highly recommended to populate this field so that users of the Rosetta API implementation don't need to maintain their own indexer to track their UTXOs.
    */
-  coins: RosettaCoin[];
+  coins?: RosettaCoin[];
   /**
    * Account-based blockchains that utilize a nonce or sequence number should include that number in the metadata. This number could be unique to the identifier or global across the account address.
    */
-  metadata: {
+  metadata?: {
     sequence_number: number;
     [k: string]: unknown | undefined;
   };
@@ -257,23 +266,6 @@ export interface RosettaParentBlockIdentifier {
    * Block hash
    */
   hash: string;
-}
-
-/**
- * The account_identifier uniquely identifies an account within a network. All fields in the account_identifier are utilized to determine this uniqueness (including the metadata field, if populated).
- */
-export interface RosettaAccount {
-  /**
-   * The address may be a cryptographic public key (or some encoding of it) or a provided username.
-   */
-  address: string;
-  sub_account?: RosettaSubAccount;
-  /**
-   * Blockchains that utilize a username model (where the address is not a derivative of a cryptographic public key) should specify the public key(s) owned by the address in metadata.
-   */
-  metadata?: {
-    [k: string]: unknown | undefined;
-  };
 }
 
 /**
@@ -456,22 +448,6 @@ export interface RosettaRelatedOperation {
    */
   index?: number;
   operation_identifier: RosettaOperationIdentifier;
-}
-
-/**
- * The account_identifier uniquely identifies an account within a network. All fields in the account_identifier are utilized to determine this uniqueness (including the metadata field, if populated).
- */
-export interface RosettaSubAccount {
-  /**
-   * The address may be a cryptographic public key (or some encoding of it) or a provided username.
-   */
-  address: string;
-  /**
-   * Blockchains that utilize a username model (where the address is not a derivative of a cryptographic public key) should specify the public key(s) owned by the address in metadata.
-   */
-  metadata?: {
-    [k: string]: unknown | undefined;
-  };
 }
 
 /**
@@ -1057,6 +1033,23 @@ export type PostConditionType = "stx" | "non_fungible" | "fungible";
 export type PostCondition = PostConditionStx | PostConditionFungible | PostConditionNonFungible;
 
 /**
+ * The account_identifier uniquely identifies an account within a network. All fields in the account_identifier are utilized to determine this uniqueness (including the metadata field, if populated).
+ */
+export interface RosettaAccount {
+  /**
+   * The address may be a cryptographic public key (or some encoding of it) or a provided username.
+   */
+  address: string;
+  sub_account?: RosettaSubAccount;
+  /**
+   * Blockchains that utilize a username model (where the address is not a derivative of a cryptographic public key) should specify the public key(s) owned by the address in metadata.
+   */
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
  * Amount is some Value of a Currency. It is considered invalid to specify a Value without a Currency.
  */
 export interface RosettaAmount {
@@ -1104,6 +1097,22 @@ export interface RosettaCurrency {
   decimals: number;
   /**
    * Any additional information related to the currency itself. For example, it would be useful to populate this object with the contract address of an ERC-20 token.
+   */
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
+ * The account_identifier uniquely identifies an account within a network. All fields in the account_identifier are utilized to determine this uniqueness (including the metadata field, if populated).
+ */
+export interface RosettaSubAccount {
+  /**
+   * The address may be a cryptographic public key (or some encoding of it) or a provided username.
+   */
+  address: string;
+  /**
+   * Blockchains that utilize a username model (where the address is not a derivative of a cryptographic public key) should specify the public key(s) owned by the address in metadata.
    */
   metadata?: {
     [k: string]: unknown | undefined;
