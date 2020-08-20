@@ -1,10 +1,12 @@
 import * as express from 'express';
 import { addAsync, RouterWithAsync } from '@awaitjs/express';
 import { DataStore } from '../../../datastore/common';
-import { RosettaConstants } from './constants';
+import { RosettaConstants, StacksCurrency } from './constants';
 import { RosettaErrors } from './errors';
 import { isValidPrincipal } from '../../../helpers';
 import { RosettaAccountBalanceResponse } from '@blockstack/stacks-blockchain-api-types';
+import { validate } from '../../validate';
+import { has0xPrefix } from '../../../helpers';
 
 export function createAccountRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -55,11 +57,22 @@ export function createAccountRouter(db: DataStore): RouterWithAsync {
       const { blockHeight, blockHash } = await db.getRecentEventBlockForAddress(stxAddress);
       index = blockHeight;
       hash = blockHash;
-    } else if (blockIdentifier.index && blockIdentifier.hash) {
+    } else if (blockIdentifier.index) {
       const result = await db.getStxBalanceAtBlock(stxAddress, blockIdentifier.index);
       balance = result.balance;
       index = blockIdentifier.index;
-      hash = blockIdentifier.hash;
+    } else if (blockIdentifier.hash) {
+      let blockHash = blockIdentifier.hash;
+      if (!has0xPrefix(blockHash)) {
+        blockHash = '0x' + blockHash;
+      }
+      const block = await db.getBlock(blockHash);
+      if (block.found) {
+        const result = await db.getStxBalanceAtBlock(stxAddress, block.result.block_height);
+        balance = result.balance;
+        index = block.result.block_height;
+        hash = blockIdentifier.hash;
+      }
     } else {
       res.status(400).json(RosettaErrors.invalidBlockIdentifier);
     }
@@ -73,8 +86,7 @@ export function createAccountRouter(db: DataStore): RouterWithAsync {
         {
           value: balance.toString(),
           currency: {
-            symbol: 'STX',
-            decimals: 8,
+            ...StacksCurrency,
           },
         },
       ],
@@ -83,6 +95,11 @@ export function createAccountRouter(db: DataStore): RouterWithAsync {
         sequence_number: 0,
       },
     };
+
+    const schemaPath = require.resolve(
+      '@blockstack/stacks-blockchain-api-types/api/rosetta-account/rosetta-account-response.schema.json'
+    );
+    await validate(schemaPath, response);
 
     res.json(response);
   });
