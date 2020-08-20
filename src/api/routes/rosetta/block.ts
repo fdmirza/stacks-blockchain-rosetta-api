@@ -2,6 +2,7 @@ import * as express from 'express';
 import { addAsync, RouterWithAsync } from '@awaitjs/express';
 import {
   RosettaBlock,
+  RosettaBlockResponse
 } from '@blockstack/stacks-blockchain-api-types';
 import { DataStore } from '../../../datastore/common';
 import {
@@ -34,8 +35,10 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
       });
       return;
     }
-
-    res.json({ block: block.result });
+    const blockResponse: RosettaBlockResponse = {
+      block: block.result
+    }
+    res.json(blockResponse);
   });
 
   router.postAsync('/transaction', async (req, res) => {
@@ -46,7 +49,7 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
 
     const transaction = await getTransactionFromDataStore(tx_hash, db);
     if (!transaction.found) {
-      res.status(404).json({ error: `cannot find block by hash ${tx_hash}` });
+      res.status(404).json({ error: `cannot find transaction by hash ${tx_hash}` });
       return;
     }
 
