@@ -20,7 +20,7 @@
         "ignore_reconciliation_error": false,
         "exempt_accounts": "",
         "bootstrap_balances": "rosetta-cli-config/bootstrap_balances.json",
-        "historical_balance_disabled": true,
+        "historical_balance_disabled": false,
         "interesting_accounts": "rosetta-cli-config/interesting_accounts.json",
         "reconciliation_disabled": false,
         "inactive_discrepency_search_disabled": false,

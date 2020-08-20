@@ -74,7 +74,7 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
     res.json(response);
   });
 
-  router.getAsync('/options', (_, res) => {
+  router.postAsync('/options', (_, res) => {
     const response: RosettaNetworkOptionsResponse = {
       version: {
         rosetta_version: RosettaConstants.rosettaVersion,
@@ -107,6 +107,7 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
           'smart_contract',
           'coinbase',
           'poison_microblock',
+          'fee'
         ],
         errors: Object.values(RosettaErrors),
         historical_balance_lookup: true,
