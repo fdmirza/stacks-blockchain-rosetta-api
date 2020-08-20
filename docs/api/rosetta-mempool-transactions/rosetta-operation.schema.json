@@ -27,7 +27,7 @@
       "$ref": "./rosetta-account.schema.json"
     },
     "amount": {
-      "$ref": "./rosetta-amount.schema.json"
+      "$ref": "./../../entities/rosetta-account/rosetta-amount.schema.json"
     },
     "coin_change": {
       "$ref": "./rosetta-coin-change.schema.json"

@@ -1,10 +1,10 @@
 {
     "network": {
-        "blockchain": "blockstack",
+        "blockchain": "stacks",
         "network": "testnet"
     },
     "online_url": "http://localhost:3999/rosetta/v1",
-    "data_directory": "rosetta-cli-config",
+    "data_directory": "",
     "http_timeout": 10,
     "sync_concurrency": 8,
     "transaction_concurrency": 16,

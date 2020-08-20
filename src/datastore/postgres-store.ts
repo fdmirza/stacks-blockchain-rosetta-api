@@ -2035,6 +2035,80 @@ export class PgDataStore extends (EventEmitter as { new(): DataStoreEventEmitter
     return { results };
   }
 
+  async getStxBalanceAtBlock(
+    stxAddress: string,
+    //blockHash: string,
+    blockHeight: number
+  ): Promise<{ balance: bigint; totalSent: bigint; totalReceived: bigint }> {
+    const result = await this.pool.query<{
+      credit_total: string | null;
+      debit_total: string | null;
+    }>(
+      `
+      WITH transfers AS (
+        SELECT amount, sender, recipient
+        FROM stx_events
+        WHERE canonical = false AND (sender = $1 OR recipient = $1) AND block_height <= $2
+      ), credit AS (
+        SELECT sum(amount) as credit_total
+        FROM transfers
+        WHERE recipient = $1
+      ), debit AS (
+        SELECT sum(amount) as debit_total
+        FROM transfers
+        WHERE sender = $1
+      )
+      SELECT credit_total, debit_total
+      FROM credit CROSS JOIN debit
+      `,
+      [stxAddress, blockHeight]
+    );
+    const feeQuery = await this.pool.query<{ fee_sum: string }>(
+      `
+      SELECT sum(fee_rate) as fee_sum
+      FROM txs
+      WHERE canonical = true AND sender_address = $1
+      `,
+      [stxAddress]
+    );
+    const totalFees = BigInt(feeQuery.rows[0].fee_sum ?? 0);
+    const totalSent = BigInt(result.rows[0].debit_total ?? 0);
+    const totalReceived = BigInt(result.rows[0].credit_total ?? 0);
+    const balanceTotal = totalReceived - totalSent - totalFees;
+    return {
+      balance: balanceTotal,
+      totalSent,
+      totalReceived,
+    };
+  }
+  
+  async getRecentEventBlockForAddress(
+    stxAddress: string
+  ): Promise<{ blockHeight: number; blockHash: string }> {
+    const result = await this.pool.query<{
+      index_block_hash: Buffer | null;
+      block_height: number | null;
+    }>(
+      `
+      SELECT index_block_hash, block_height 
+        from stx_events 
+        where (sender = $1 OR recipient = $1) ORDER BY block_height DESC limit 1
+      `,
+      [stxAddress]
+    );
+
+    const blockHeight = result.rows[0].block_height ?? 0;
+    let blockHash: string = '';
+
+    if (result.rows[0].index_block_hash) {
+      blockHash = bufferToHexPrefixString(result.rows[0].index_block_hash);
+    }
+    return {
+      blockHeight,
+      blockHash,
+    };
+  }
+  
   async close(): Promise<void> {
     await this.pool.end();
   }

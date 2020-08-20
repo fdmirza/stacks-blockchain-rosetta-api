@@ -1,103 +1,121 @@
 import * as express from 'express';
 import { addAsync, RouterWithAsync } from '@awaitjs/express';
 import { DataStore } from '../../../datastore/common';
+import { getRosettaBlockFromDataStore } from '../../controllers/db-controller';
+import { RosettaConstants } from './constants';
+import { StacksCoreRpcClient, Neighbor } from '../../../core-rpc/client';
 import {
-    getBlockFromDataStore, getRosettaBlockFromDataStore,
-
-
-} from '../../controllers/db-controller';
+  RosettaNetworkListResponse,
+  RosettaNetworkOptionsResponse,
+  RosettaNetworkStatusResponse,
+  RosettaPeers,
+} from '@blockstack/stacks-blockchain-api-types';
+import { RosettaErrors } from './errors';
 
 export function createNetworkRouter(db: DataStore): RouterWithAsync {
-    const router = addAsync(express.Router());
-    router.use(express.json());
+  const router = addAsync(express.Router());
 
-    router.postAsync('/list', async (req, res) => {
+  router.postAsync('/list', async (req, res) => {
+    const response: RosettaNetworkListResponse = {
+      network_identifiers: [
+        {
+          blockchain: RosettaConstants.blockchain,
+          network: RosettaConstants.network,
+        },
+      ],
+    };
 
-        const response = {
-            network_identifiers: [
-                {
-                    blockchain: "blockstack",
-                    network: "testnet"
-                }
-            ]
-        }
+    res.json(response);
+  });
 
-        res.json(response)
-    })
+  router.postAsync('/status', async (_, res) => {
+    const block = await getRosettaBlockFromDataStore(db);
+    if (!block.found) {
+      res.status(404).json({ error: `cannot find block` });
+      return;
+    }
 
-    router.postAsync('/status', async (req, res) => {
+    const genesis = await getRosettaBlockFromDataStore(db, undefined, 1);
 
-        const block = await getRosettaBlockFromDataStore(db);
-        if (!block.found) {
-            res.status(404).json({ error: `cannot find block` });
-            return;
-        }
+    if (!genesis.found) {
+      res.status(404).json({ error: `cannot find genesis block` });
+      return;
+    }
 
-        const genesis = await getRosettaBlockFromDataStore(db, undefined, 1);
+    const stacksCoreRpcClient = new StacksCoreRpcClient();
+    const neighborsResp = await stacksCoreRpcClient.getNeighbors();
+    // TODO: Check if we have response or not
+    const neighbors: Neighbor[] = [];
+    neighbors.push(...neighborsResp.inbound, ...neighborsResp.outbound);
+    const peers: RosettaPeers[] = neighbors
+      .filter(
+        (neighbor, i, arr) =>
+          arr.findIndex(
+            currentNeighbor => currentNeighbor.public_key_hash === neighbor.public_key_hash
+          ) === i
+      )
+      .map(neighbor => {
+        return {
+          peer_id: neighbor.public_key_hash,
+        };
+      });
 
-        if (!genesis.found) {
-            res.status(404).json({ error: `cannot find genesis block` });
-            return;
-        }
+    const response: RosettaNetworkStatusResponse = {
+      current_block_identifier: {
+        index: block.result.block_identifier.index,
+        hash: block.result.block_identifier.hash,
+      },
+      current_block_timestamp: block.result.timestamp,
+      genesis_block_identifier: {
+        index: genesis.result.block_identifier.index,
+        hash: genesis.result.block_identifier.hash,
+      },
+      peers,
+    };
 
-        // TODO : update hard-coded peer_id
-        const respone = {
-            current_block_identifier: {
-                index: block.result.block_identifier.index,
-                hash: block.result.block_identifier.hash
-            },
-            current_block_timestamp: block.result.timestamp,
-            genesis_block_identifier: {
-                index: genesis.result.block_identifier.index,
-                hash: genesis.result.block_identifier.hash
-            }
-        }
+    res.json(response);
+  });
 
-        res.json(respone)
-    })
+  router.postAsync('/options', async (_, res) => {
+    const response: RosettaNetworkOptionsResponse = {
+      version: {
+        rosetta_version: RosettaConstants.rosettaVersion,
+        node_version: process.version,
+        middleware_version: process.env.npm_package_version,
+        metadata: {},
+      },
+      allow: {
+        operation_statuses: [
+          {
+            status: 'success',
+            successful: true,
+          },
+          {
+            status: 'pending',
+            successful: true,
+          }, {
+            status: 'abort_by_response',
+            successful: false,
+          },
+          {
+            status: 'abort_by_post_condition',
+            successful: false,
+          },
+        ],
+        operation_types: [
+          'token_transfer',
+          'contract_call',
+          'smart_contract',
+          'coinbase',
+          'poison_microblock',
+        ],
+        errors: Object.values(RosettaErrors),
+        historical_balance_lookup: true,
+      },
+    };
 
-    router.postAsync('/options', async (req, res) => {
+    return res.json(response);
+  });
 
-        res.json({
-            "version": {
-                "rosetta_version": "1.2.5",
-                "node_version": "1.0.2",
-                "middleware_version": "0.2.7",
-                "metadata": {}
-            },
-            "allow": {
-                "operation_statuses": [
-                    {
-                        "status": "success",
-                        "successful": true
-                    }
-                ],
-                "operation_types": [
-                    'token_transfer',
-                    'contract_call',
-                    'smart_contract',
-                    'coinbase',
-                    'poison_microblock',
-                ],
-                "errors": [
-                    {
-                        "code": 11,
-                        "message": "Invalid account format",
-                        "retriable": true,
-                        "details": {
-                            "address": "0x1dcc4de8dec75d7aab85b567b6",
-                            "error": "not base64"
-                        }
-                    }, {
-                        "code": 12,
-                        "message": "cannot find block by hash",
-                        "retriable": false,
-                    }
-                ],
-                "historical_balance_lookup": true
-            }
-        })
-    })
-
-    return router;
+  return router;
 }
