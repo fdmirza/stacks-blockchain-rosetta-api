@@ -38,15 +38,5 @@
             "decimals": 6
         },
         "value": "10000000000000000"
-    },
-    {
-        "account_identifier": {
-            "address": "STF9B75ADQAVXQHNEQ6KGHXTG7JP305J2GRWF3A2"
-        },
-        "currency": {
-            "symbol": "STX",
-            "decimals": 6
-        },
-        "value": "10000000000000000"
     }
 ]

@@ -43,7 +43,7 @@ function makeFeeOperation(tx: DbMempoolTx | DbTx): RosettaOperaion {
     status: getTxStatusString(tx.status),
     account: { address: tx.sender_address },
     amount: {
-      value: tx.fee_rate.toString(10),
+      value: (BigInt(0) - tx.fee_rate).toString(10),
       currency: { symbol: 'STX', decimals: 6 },
     },
   };
