@@ -2048,7 +2048,7 @@ export class PgDataStore extends (EventEmitter as { new(): DataStoreEventEmitter
       WITH transfers AS (
         SELECT amount, sender, recipient
         FROM stx_events
-        WHERE canonical = false AND (sender = $1 OR recipient = $1) AND block_height <= $2
+        WHERE canonical = true AND (sender = $1 OR recipient = $1) AND block_height <= $2
       ), credit AS (
         SELECT sum(amount) as credit_total
         FROM transfers
@@ -2081,7 +2081,7 @@ export class PgDataStore extends (EventEmitter as { new(): DataStoreEventEmitter
       totalReceived,
     };
   }
-  
+
   async getRecentEventBlockForAddress(
     stxAddress: string
   ): Promise<{ blockHeight: number; blockHash: string }> {
