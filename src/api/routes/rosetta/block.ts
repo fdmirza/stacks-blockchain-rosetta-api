@@ -2,6 +2,7 @@ import * as express from 'express';
 import { addAsync, RouterWithAsync } from '@awaitjs/express';
 import {
   RosettaBlock,
+  RosettaBlockResponse
 } from '@blockstack/stacks-blockchain-api-types';
 import { DataStore } from '../../../datastore/common';
 import {
@@ -17,6 +18,7 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
   router.use(express.json());
   router.postAsync('/', async (req, res) => {
+    console.log(JSON.stringify(req.body));
     let block_hash = req.body.block_identifier.hash;
     const index = req.body.block_identifier.index;
     if (block_hash && !has0xPrefix(block_hash)) {
@@ -26,11 +28,17 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
     const block = await getRosettaBlockFromDataStore(db, block_hash, index);
 
     if (!block.found) {
-      res.status(404).json({ error: `cannot find block by hash ${block_hash}` });
+      res.status(404).json({
+        code: 12,
+        message: "cannot find block by hash",
+        retriable: false
+      });
       return;
     }
-
-    res.json(block.result);
+    const blockResponse: RosettaBlockResponse = {
+      block: block.result
+    }
+    res.json(blockResponse);
   });
 
   router.postAsync('/transaction', async (req, res) => {
@@ -41,7 +49,7 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
 
     const transaction = await getTransactionFromDataStore(tx_hash, db);
     if (!transaction.found) {
-      res.status(404).json({ error: `cannot find block by hash ${tx_hash}` });
+      res.status(404).json({ error: `cannot find transaction by hash ${tx_hash}` });
       return;
     }
 

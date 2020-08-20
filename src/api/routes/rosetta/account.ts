@@ -3,7 +3,7 @@ import { addAsync, RouterWithAsync } from '@awaitjs/express';
 import { DataStore } from '../../../datastore/common';
 import { RosettaConstants, StacksCurrency } from './constants';
 import { RosettaErrors } from './errors';
-import { isValidPrincipal } from '../../../helpers';
+import { isValidC32Address } from '../../../helpers';
 import { RosettaAccountBalanceResponse } from '@blockstack/stacks-blockchain-api-types';
 import { validate } from '../../validate';
 import { has0xPrefix } from '../../../helpers';
@@ -41,8 +41,7 @@ export function createAccountRouter(db: DataStore): RouterWithAsync {
     }
 
     const stxAddress = accountIdentifier.address;
-
-    if (!isValidPrincipal(accountIdentifier.address)) {
+    if (!isValidC32Address(stxAddress)) {
       return res.status(400).json(RosettaErrors.invalidAccount);
     }
 
@@ -54,9 +53,11 @@ export function createAccountRouter(db: DataStore): RouterWithAsync {
     if (blockIdentifier == null) {
       const result = await db.getStxBalance(stxAddress);
       balance = result.balance;
-      const { blockHeight, blockHash } = await db.getRecentEventBlockForAddress(stxAddress);
-      index = blockHeight;
-      hash = blockHash;
+      const block = await db.getCurrentBlock();
+      if (block.found) {
+        index = block.result.block_height;
+        hash = block.result.block_hash;
+      }
     } else if (blockIdentifier.index) {
       const result = await db.getStxBalanceAtBlock(stxAddress, blockIdentifier.index);
       balance = result.balance;
@@ -96,10 +97,10 @@ export function createAccountRouter(db: DataStore): RouterWithAsync {
       },
     };
 
-    const schemaPath = require.resolve(
-      '@blockstack/stacks-blockchain-api-types/api/rosetta-account/rosetta-account-response.schema.json'
-    );
-    await validate(schemaPath, response);
+    // const schemaPath = require.resolve(
+    //   '@blockstack/stacks-blockchain-api-types/api/rosetta-account/rosetta-account-response.schema.json'
+    // );
+    // await validate(schemaPath, response);
 
     res.json(response);
   });

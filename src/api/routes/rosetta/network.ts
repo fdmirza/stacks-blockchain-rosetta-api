@@ -28,7 +28,7 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
     res.json(response);
   });
 
-  router.getAsync('/status', async (_, res) => {
+  router.postAsync('/status', async (_, res) => {
     const block = await getRosettaBlockFromDataStore(db);
     if (!block.found) {
       res.status(404).json({ error: `cannot find block` });
@@ -85,11 +85,19 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
       allow: {
         operation_statuses: [
           {
-            status: 'SUCCESS',
+            status: 'success',
             successful: true,
           },
           {
-            status: 'FAILURE',
+            status: 'pending',
+            successful: true,
+          },
+          {
+            status: 'abort_by_response',
+            successful: false,
+          },
+          {
+            status: 'abort_by_post_condition',
             successful: false,
           },
         ],

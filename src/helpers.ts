@@ -154,7 +154,7 @@ export function digestSha512_256(input: Buffer): Buffer {
   return digest;
 }
 
-function isValidC32Address(stxAddress: string): boolean {
+export function isValidC32Address(stxAddress: string): boolean {
   try {
     c32addressDecode(stxAddress);
     return true;

@@ -231,7 +231,7 @@ export async function getRosettaBlockFromDataStore(db: DataStore,
 ): Promise<{ found: true; result: RosettaBlock } | { found: false }> {
 
   let query
-  if (blockHeight) {
+  if (blockHeight && blockHeight > 0) {
     query = db.getBlockByHeight(blockHeight)
   } else if (blockHash) {
     query = db.getBlock(blockHash);
@@ -244,21 +244,26 @@ export async function getRosettaBlockFromDataStore(db: DataStore,
   }
   const dbBlock = blockQuery.result;
   const blockTxs = await getBlockTransactionsFromDataStore(dbBlock.block_hash, db);
-  const parentBlockQuery = await db.getBlock(dbBlock.parent_block_hash);
+  let parentBlockHash = dbBlock.parent_block_hash;
   let parent_block_identifier: RosettaParentBlockIdentifier
-  if (parentBlockQuery.found) {
-    const parentBlock = parentBlockQuery.result
+  if (dbBlock.block_height <= 1) {
+    // case for genesis block
     parent_block_identifier = {
-      index: parentBlock.block_height,
-      hash: parentBlock.block_hash
+      index: dbBlock.block_height,
+      hash: dbBlock.block_hash
     }
   } else {
-    parent_block_identifier = {
-      index: 0,
-      hash: ""
+    const parentBlockQuery = await db.getBlock(parentBlockHash);
+    if (parentBlockQuery.found) {
+      const parentBlock = parentBlockQuery.result
+      parent_block_identifier = {
+        index: parentBlock.block_height,
+        hash: parentBlock.block_hash
+      }
+    } else {
+      return { found: false };
     }
   }
-
   const apiBlock: RosettaBlock = {
     block_identifier: { index: dbBlock.block_height, hash: dbBlock.block_hash },
     parent_block_identifier,
