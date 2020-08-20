@@ -79,12 +79,12 @@ export const RosettaErrors = {
     retriable: true,
   },
   emptyBlockchain: {
-    code: 615,
+    code: 616,
     message: 'Blockchain name is null',
     retriable: true,
   },
   emptyNetwork: {
-    code: 616,
+    code: 617,
     message: 'Network name is null',
     retriable: true,
   },
