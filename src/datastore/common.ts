@@ -323,9 +323,12 @@ export interface DataStore extends DataStoreEventEmitter {
 
   getStxBalanceAtBlock(
     stxAddress: string,
-    // blockHash: string,
     blockHeight: number
   ): Promise<{ balance: bigint; totalSent: bigint; totalReceived: bigint }>;
+
+  getRecentEventBlockForAddress(
+    stxAddress: string
+  ): Promise<{ blockHeight: number; blockHash: string }> ;
 }
 
 export function getAssetEventId(event_index: number, event_tx_id: string): string {
