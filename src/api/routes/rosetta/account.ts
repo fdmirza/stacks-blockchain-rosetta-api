@@ -107,10 +107,10 @@ export function createAccountRouter(db: DataStore): RouterWithAsync {
       },
     };
 
-    // const schemaPath = require.resolve(
-    //   '@blockstack/stacks-blockchain-api-types/api/rosetta-account/rosetta-account-response.schema.json'
-    // );
-    // await validate(schemaPath, response);
+    const schemaPath = require.resolve(
+      '@blockstack/stacks-blockchain-api-types/api/rosetta-account/rosetta-account-response.schema.json'
+    );
+    await validate(schemaPath, response);
 
     res.json(response);
   });
