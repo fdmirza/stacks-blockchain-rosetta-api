@@ -57,11 +57,19 @@ export function createAccountRouter(db: DataStore): RouterWithAsync {
       if (block.found) {
         index = block.result.block_height;
         hash = block.result.block_hash;
+      } else {
+        res.status(400).json(RosettaErrors.blockNotFound);
       }
     } else if (blockIdentifier.index) {
       const result = await db.getStxBalanceAtBlock(stxAddress, blockIdentifier.index);
       balance = result.balance;
       index = blockIdentifier.index;
+      const block = await db.getBlockByHeight(index);
+      if (block.found) {
+        hash = block.result.block_hash;
+      } else {
+        res.status(400).json(RosettaErrors.blockNotFound);
+      }
     } else if (blockIdentifier.hash) {
       let blockHash = blockIdentifier.hash;
       if (!has0xPrefix(blockHash)) {
@@ -72,7 +80,9 @@ export function createAccountRouter(db: DataStore): RouterWithAsync {
         const result = await db.getStxBalanceAtBlock(stxAddress, block.result.block_height);
         balance = result.balance;
         index = block.result.block_height;
-        hash = blockIdentifier.hash;
+        hash = block.result.block_hash;
+      } else {
+        res.status(400).json(RosettaErrors.blockNotFound);
       }
     } else {
       res.status(400).json(RosettaErrors.invalidBlockIdentifier);
@@ -97,10 +107,10 @@ export function createAccountRouter(db: DataStore): RouterWithAsync {
       },
     };
 
-    // const schemaPath = require.resolve(
-    //   '@blockstack/stacks-blockchain-api-types/api/rosetta-account/rosetta-account-response.schema.json'
-    // );
-    // await validate(schemaPath, response);
+    const schemaPath = require.resolve(
+      '@blockstack/stacks-blockchain-api-types/api/rosetta-account/rosetta-account-response.schema.json'
+    );
+    await validate(schemaPath, response);
 
     res.json(response);
   });
