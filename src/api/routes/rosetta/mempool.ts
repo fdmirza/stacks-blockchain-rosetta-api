@@ -9,6 +9,7 @@ import {
   RosettaTransaction
 } from '@blockstack/stacks-blockchain-api-types';
 import { getOperations } from '../../operations';
+import { RosettaErrors } from './errors';
 
 const MAX_MEMPOOL_TXS_PER_REQUEST = 200;
 const parseMempoolTxQueryLimit = parseLimitQuery({
@@ -47,7 +48,7 @@ export function createMempoolRouter(db: DataStore): RouterWithAsync {
     const mempoolTxQuery = await db.getMempoolTx(tx_id);
 
     if (!mempoolTxQuery.found) {
-      res.status(404).json({ error: `could not find transaction by ID ${tx_id}` });
+      res.status(404).json(RosettaErrors.transactionNotFound);
       return;
     }
 

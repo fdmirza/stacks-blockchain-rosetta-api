@@ -31,14 +31,14 @@ export function createNetworkRouter(db: DataStore): RouterWithAsync {
   router.postAsync('/status', async (_, res) => {
     const block = await getRosettaBlockFromDataStore(db);
     if (!block.found) {
-      res.status(404).json({ error: `cannot find block` });
+      res.status(404).json(RosettaErrors.blockNotFound);
       return;
     }
 
     const genesis = await getRosettaBlockFromDataStore(db, undefined, 1);
 
     if (!genesis.found) {
-      res.status(404).json({ error: `cannot find genesis block` });
+      res.status(404).json(RosettaErrors.blockNotFound);
       return;
     }
 

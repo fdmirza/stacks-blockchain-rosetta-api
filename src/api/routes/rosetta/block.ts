@@ -12,6 +12,7 @@ import {
   getRosettaBlockFromDataStore
 } from '../../controllers/db-controller';
 import { has0xPrefix } from '../../../helpers';
+import { RosettaErrors } from './errors';
 
 
 export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
@@ -28,11 +29,7 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
     const block = await getRosettaBlockFromDataStore(db, block_hash, index);
 
     if (!block.found) {
-      res.status(404).json({
-        code: 12,
-        message: "cannot find block by hash",
-        retriable: false
-      });
+      res.status(404).json(RosettaErrors.blockNotFound);
       return;
     }
     const blockResponse: RosettaBlockResponse = {
@@ -49,7 +46,7 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
 
     const transaction = await getTransactionFromDataStore(tx_hash, db);
     if (!transaction.found) {
-      res.status(404).json({ error: `cannot find transaction by hash ${tx_hash}` });
+      res.status(404).json(RosettaErrors.transactionNotFound);
       return;
     }
 
