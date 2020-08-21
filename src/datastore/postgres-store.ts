@@ -34,6 +34,7 @@ import {
   DataStoreUpdateData,
   DbFaucetRequestCurrency,
   DbMempoolTx,
+  DbMempoolTxId,
   DbSearchResult,
 } from './common';
 import { TransactionType } from '@blockstack/stacks-blockchain-api-types';
@@ -60,7 +61,7 @@ export async function runMigrations(
   if (direction !== 'up' && !isTestEnv && !isDevEnv) {
     throw new Error(
       'Whoa there! This is a testing function that will drop all data from PG. ' +
-        'Set NODE_ENV to "test" or "development" to enable migration testing.'
+      'Set NODE_ENV to "test" or "development" to enable migration testing.'
     );
   }
   clientConfig = clientConfig ?? getPgClientConfig();
@@ -74,7 +75,7 @@ export async function runMigrations(
       migrationsTable: MIGRATIONS_TABLE,
       count: Infinity,
       logger: {
-        info: msg => {},
+        info: msg => { },
         warn: msg => logger.warn(msg),
         error: msg => logger.error(msg),
       },
@@ -141,6 +142,11 @@ const MEMPOOL_TX_COLUMNS = `
 
   -- coinbase tx columns
   coinbase_payload
+`;
+
+const MEMPOOL_TX_ID_COLUMNS = `
+  -- required columns
+  tx_id
 `;
 
 const BLOCK_COLUMNS = `
@@ -237,6 +243,9 @@ interface TxQueryResult {
   // `coinbase` tx types
   coinbase_payload?: Buffer;
 }
+interface MempoolTxIdQueryResult {
+  tx_id: Buffer;
+}
 
 interface FaucetRequestQueryResult {
   currency: string;
@@ -266,7 +275,7 @@ interface UpdatedEntities {
   };
 }
 
-export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitter })
+export class PgDataStore extends (EventEmitter as { new(): DataStoreEventEmitter })
   implements DataStore {
   readonly pool: Pool;
   private constructor(pool: Pool) {
@@ -659,14 +668,14 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       if (parentResult.rowCount > 1) {
         throw new Error(
           `DB contains multiple blocks at height ${block.block_height - 1} and index_hash ${
-            block.parent_index_block_hash
+          block.parent_index_block_hash
           }`
         );
       }
       if (parentResult.rowCount === 0) {
         throw new Error(
           `DB does not contain a parent block at height ${block.block_height - 1} with index_hash ${
-            block.parent_index_block_hash
+          block.parent_index_block_hash
           }`
         );
       }
@@ -744,7 +753,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
         connectionError = error;
         await timeout(2000);
       } finally {
-        client.end(() => {});
+        client.end(() => { });
       }
     } while (initTimer.getElapsed() < 10000);
     if (!connectionOkay) {
@@ -827,6 +836,42 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     return { found: true, result: block } as const;
   }
 
+  async getBlockByHeight(block_height: number) {
+    const result = await this.pool.query<BlockQueryResult>(
+      `
+      SELECT ${BLOCK_COLUMNS}
+      FROM blocks
+      WHERE block_height = $1
+      ORDER BY canonical DESC, block_height DESC
+      LIMIT 1
+      `,
+      [block_height]
+    );
+    if (result.rowCount === 0) {
+      return { found: false } as const;
+    }
+    const row = result.rows[0];
+    const block = this.parseBlockQueryResult(row);
+    return { found: true, result: block } as const;
+  }
+
+  async getCurrentBlock() {
+    const result = await this.pool.query<BlockQueryResult>(
+      `
+      SELECT ${BLOCK_COLUMNS}
+      FROM blocks
+      ORDER BY  block_height DESC
+      LIMIT 1
+      `
+    );
+    if (result.rowCount === 0) {
+      return { found: false } as const;
+    }
+    const row = result.rows[0];
+    const block = this.parseBlockQueryResult(row);
+    return { found: true, result: block } as const;
+  }
+
   async getBlocks({ limit, offset }: { limit: number; offset: number }) {
     const totalQuery = this.pool.query<{ count: number }>(`
       SELECT COUNT(*)::integer
@@ -860,6 +905,23 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     );
     const txIds = result.rows.sort(tx => tx.tx_index).map(tx => bufferToHexPrefixString(tx.tx_id));
     return { results: txIds };
+  }
+
+  async getBlockTxsRows(indexBlockHash: string) {
+    const result = await this.pool.query<TxQueryResult>(
+      `
+      SELECT ${TX_COLUMNS}
+      FROM txs
+      WHERE block_hash = $1
+      `,
+      [hexToBuffer(indexBlockHash)]
+    );
+    if (result.rowCount === 0) {
+      return { found: false } as const;
+    }
+    const parsed = result.rows.map(r => this.parseTxQueryResult(r));
+
+    return { found: true, result: parsed };
   }
 
   async updateTx(client: ClientBase, tx: DbTx): Promise<number> {
@@ -1085,6 +1147,39 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     );
 
     const parsed = resultQuery.rows.map(r => this.parseMempoolTxQueryResult(r));
+    return { results: parsed, total: totalQuery.rows[0].count };
+  }
+
+  async getMempoolTxIdList({
+    limit,
+    offset,
+  }: {
+    limit: number;
+    offset: number;
+  }): Promise<{ results: DbMempoolTxId[]; total: number }> {
+    const totalQuery = await this.pool.query<{ count: number }>(
+      `
+      SELECT COUNT(*)::integer
+      FROM mempool_txs
+      `
+    );
+    const resultQuery = await this.pool.query<MempoolTxIdQueryResult>(
+      `
+      SELECT ${MEMPOOL_TX_ID_COLUMNS}
+      FROM mempool_txs
+      ORDER BY receipt_time DESC
+      LIMIT $1
+      OFFSET $2
+      `,
+      [limit, offset]
+    );
+
+    const parsed = resultQuery.rows.map(r => {
+      const tx: DbMempoolTxId = {
+        tx_id: bufferToHexPrefixString(r.tx_id),
+      };
+      return tx;
+    });
     return { results: parsed, total: totalQuery.rows[0].count };
   }
 
@@ -1990,6 +2085,80 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
     return { results };
   }
 
+  async getStxBalanceAtBlock(
+    stxAddress: string,
+    //blockHash: string,
+    blockHeight: number
+  ): Promise<{ balance: bigint; totalSent: bigint; totalReceived: bigint }> {
+    const result = await this.pool.query<{
+      credit_total: string | null;
+      debit_total: string | null;
+    }>(
+      `
+      WITH transfers AS (
+        SELECT amount, sender, recipient
+        FROM stx_events
+        WHERE canonical = true AND (sender = $1 OR recipient = $1) AND block_height <= $2
+      ), credit AS (
+        SELECT sum(amount) as credit_total
+        FROM transfers
+        WHERE recipient = $1
+      ), debit AS (
+        SELECT sum(amount) as debit_total
+        FROM transfers
+        WHERE sender = $1
+      )
+      SELECT credit_total, debit_total
+      FROM credit CROSS JOIN debit
+      `,
+      [stxAddress, blockHeight]
+    );
+    const feeQuery = await this.pool.query<{ fee_sum: string }>(
+      `
+      SELECT sum(fee_rate) as fee_sum
+      FROM txs
+      WHERE canonical = true AND sender_address = $1
+      `,
+      [stxAddress]
+    );
+    const totalFees = BigInt(feeQuery.rows[0].fee_sum ?? 0);
+    const totalSent = BigInt(result.rows[0].debit_total ?? 0);
+    const totalReceived = BigInt(result.rows[0].credit_total ?? 0);
+    const balanceTotal = totalReceived - totalSent - totalFees;
+    return {
+      balance: balanceTotal,
+      totalSent,
+      totalReceived,
+    };
+  }
+
+  async getRecentEventBlockForAddress(
+    stxAddress: string
+  ): Promise<{ blockHeight: number; blockHash: string }> {
+    const result = await this.pool.query<{
+      index_block_hash: Buffer | null;
+      block_height: number | null;
+    }>(
+      `
+      SELECT index_block_hash, block_height 
+        from stx_events 
+        where (sender = $1 OR recipient = $1) ORDER BY block_height DESC limit 1
+      `,
+      [stxAddress]
+    );
+
+    const blockHeight = result.rows[0].block_height ?? 0;
+    let blockHash: string = '';
+
+    if (result.rows[0].index_block_hash) {
+      blockHash = bufferToHexPrefixString(result.rows[0].index_block_hash);
+    }
+    return {
+      blockHeight,
+      blockHash,
+    };
+  }
+  
   async close(): Promise<void> {
     await this.pool.end();
   }

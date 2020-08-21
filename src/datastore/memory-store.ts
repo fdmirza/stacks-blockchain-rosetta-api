@@ -20,7 +20,7 @@ import { logger, FoundOrNot } from '../helpers';
 import { TransactionType } from '@blockstack/stacks-blockchain-api-types';
 import { getTxTypeId } from '../api/controllers/db-controller';
 
-export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEmitter })
+export class MemoryDataStore extends (EventEmitter as { new(): DataStoreEventEmitter })
   implements DataStore {
   readonly blocks: Map<string, { entry: DbBlock }> = new Map();
   readonly txs: Map<string, { entry: DbTx }> = new Map();
@@ -121,6 +121,18 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
     return Promise.resolve({ found: true, result: block.entry });
   }
 
+  getBlockByHeight(block_height: number):
+    Promise<FoundOrNot<DbBlock>> {
+    throw new Error('not yet implemented');
+
+  }
+
+  getCurrentBlock():
+    Promise<FoundOrNot<DbBlock>> {
+    throw new Error('not yet implemented');
+
+  }
+
   getBlocks({ limit, offset }: { limit: number; offset: number }) {
     const blockList = [...this.blocks.values()].filter(b => b.entry.canonical);
     const results = blockList
@@ -136,6 +148,10 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
       .filter(tx => tx.entry.index_block_hash === indexBlockHash)
       .map(tx => tx.entry.tx_id);
     return Promise.resolve({ results: results });
+  }
+
+  getBlockTxsRows(indexBlockHash: string): Promise<FoundOrNot<DbTx[]>> {
+    throw new Error('not yet implemented');
   }
 
   updateTx(tx: DbTx) {
@@ -159,6 +175,13 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
   }
 
   getMempoolTxList(args: {
+    limit: number;
+    offset: number;
+  }): Promise<{ results: DbMempoolTx[]; total: number }> {
+    throw new Error('not yet implemented');
+  }
+
+  getMempoolTxIdList(args: {
     limit: number;
     offset: number;
   }): Promise<{ results: DbMempoolTx[]; total: number }> {
@@ -353,4 +376,19 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
       .slice(0, 5);
     return Promise.resolve({ results: request });
   }
+
+  getStxBalanceAtBlock(
+    stxAddress: string,
+    // blockHash: string,
+    blockHeight: number
+  ): Promise<{ balance: bigint; totalSent: bigint; totalReceived: bigint }> {
+    throw new Error('not yet implemented');
+  }
+  
+  getRecentEventBlockForAddress(
+    stxAddress: string
+  ): Promise<{ blockHeight: number; blockHash: string }> {
+    throw new Error('not yet implemented');
+  }
+
 }

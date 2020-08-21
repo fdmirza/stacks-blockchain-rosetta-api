@@ -40,6 +40,11 @@ export enum DbTxStatus {
   AbortByPostCondition = -2,
 }
 
+export enum CoinAction {
+  CoinSpent = 'coin_spent',
+  CoinCreated = 'coin_created',
+}
+
 // TODO: create a base interface for DbTx and DbMempoolTx, rename DbTx to DbTxMined?
 
 export interface DbTx {
@@ -133,6 +138,8 @@ export interface DbMempoolTx {
 
   /** Only valid for `coinbase` tx types. Hex encoded 32-bytes. */
   coinbase_payload?: Buffer;
+
+  raw_result?: string;
 }
 
 export interface DbSmartContract {
@@ -143,7 +150,9 @@ export interface DbSmartContract {
   source_code: string;
   abi: string;
 }
-
+export interface DbMempoolTxId {
+  tx_id: string;
+}
 export enum DbFaucetRequestCurrency {
   BTC = 'btc',
   STX = 'stx',
@@ -248,17 +257,23 @@ export interface DbSearchResult {
 
 export interface DataStore extends DataStoreEventEmitter {
   getBlock(blockHash: string): Promise<FoundOrNot<DbBlock>>;
+  getBlockByHeight(block_height: number): Promise<FoundOrNot<DbBlock>>;
+  getCurrentBlock(): Promise<FoundOrNot<DbBlock>>;
   getBlocks(args: {
     limit: number;
     offset: number;
   }): Promise<{ results: DbBlock[]; total: number }>;
   getBlockTxs(indexBlockHash: string): Promise<{ results: string[] }>;
-
+  getBlockTxsRows(indexBlockHash: string): Promise<FoundOrNot<DbTx[]>>;
   getMempoolTx(txId: string): Promise<FoundOrNot<DbMempoolTx>>;
   getMempoolTxList(args: {
     limit: number;
     offset: number;
   }): Promise<{ results: DbMempoolTx[]; total: number }>;
+  getMempoolTxIdList(args: {
+    limit: number;
+    offset: number;
+  }): Promise<{ results: DbMempoolTxId[]; total: number }>;
   getTx(txId: string): Promise<FoundOrNot<DbTx>>;
   getTxList(args: {
     limit: number;
@@ -311,6 +326,15 @@ export interface DataStore extends DataStoreEventEmitter {
   searchPrincipal(args: { principal: string }): Promise<FoundOrNot<DbSearchResult>>;
 
   insertFaucetRequest(faucetRequest: DbFaucetRequest): Promise<void>;
+
+  getStxBalanceAtBlock(
+    stxAddress: string,
+    blockHeight: number
+  ): Promise<{ balance: bigint; totalSent: bigint; totalReceived: bigint }>;
+
+  getRecentEventBlockForAddress(
+    stxAddress: string
+  ): Promise<{ blockHeight: number; blockHash: string }> ;
 }
 
 export function getAssetEventId(event_index: number, event_tx_id: string): string {
