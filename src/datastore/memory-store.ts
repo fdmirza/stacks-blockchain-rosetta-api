@@ -20,7 +20,7 @@ import { logger, FoundOrNot } from '../helpers';
 import { TransactionType } from '@blockstack/stacks-blockchain-api-types';
 import { getTxTypeId } from '../api/controllers/db-controller';
 
-export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEmitter })
+export class MemoryDataStore extends (EventEmitter as { new(): DataStoreEventEmitter })
   implements DataStore {
   readonly blocks: Map<string, { entry: DbBlock }> = new Map();
   readonly txs: Map<string, { entry: DbTx }> = new Map();
@@ -119,6 +119,18 @@ export class MemoryDataStore extends (EventEmitter as { new (): DataStoreEventEm
       return Promise.resolve({ found: false } as const);
     }
     return Promise.resolve({ found: true, result: block.entry });
+  }
+
+  getBlockByHeight(block_height: number):
+    Promise<FoundOrNot<DbBlock>> {
+    throw new Error('not yet implemented');
+
+  }
+
+  getCurrentBlock():
+    Promise<FoundOrNot<DbBlock>> {
+    throw new Error('not yet implemented');
+
   }
 
   getBlocks({ limit, offset }: { limit: number; offset: number }) {

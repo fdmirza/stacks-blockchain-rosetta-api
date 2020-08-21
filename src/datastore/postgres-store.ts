@@ -60,7 +60,7 @@ export async function runMigrations(
   if (direction !== 'up' && !isTestEnv && !isDevEnv) {
     throw new Error(
       'Whoa there! This is a testing function that will drop all data from PG. ' +
-        'Set NODE_ENV to "test" or "development" to enable migration testing.'
+      'Set NODE_ENV to "test" or "development" to enable migration testing.'
     );
   }
   clientConfig = clientConfig ?? getPgClientConfig();
@@ -74,7 +74,7 @@ export async function runMigrations(
       migrationsTable: MIGRATIONS_TABLE,
       count: Infinity,
       logger: {
-        info: msg => {},
+        info: msg => { },
         warn: msg => logger.warn(msg),
         error: msg => logger.error(msg),
       },
@@ -266,7 +266,7 @@ interface UpdatedEntities {
   };
 }
 
-export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitter })
+export class PgDataStore extends (EventEmitter as { new(): DataStoreEventEmitter })
   implements DataStore {
   readonly pool: Pool;
   private constructor(pool: Pool) {
@@ -659,14 +659,14 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       if (parentResult.rowCount > 1) {
         throw new Error(
           `DB contains multiple blocks at height ${block.block_height - 1} and index_hash ${
-            block.parent_index_block_hash
+          block.parent_index_block_hash
           }`
         );
       }
       if (parentResult.rowCount === 0) {
         throw new Error(
           `DB does not contain a parent block at height ${block.block_height - 1} with index_hash ${
-            block.parent_index_block_hash
+          block.parent_index_block_hash
           }`
         );
       }
@@ -744,7 +744,7 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
         connectionError = error;
         await timeout(2000);
       } finally {
-        client.end(() => {});
+        client.end(() => { });
       }
     } while (initTimer.getElapsed() < 10000);
     if (!connectionOkay) {
@@ -806,6 +806,42 @@ export class PgDataStore extends (EventEmitter as { new (): DataStoreEventEmitte
       canonical: row.canonical,
     };
     return block;
+  }
+
+  async getBlockByHeight(block_height: number) {
+    const result = await this.pool.query<BlockQueryResult>(
+      `
+      SELECT ${BLOCK_COLUMNS}
+      FROM blocks
+      WHERE block_height = $1
+      ORDER BY canonical DESC, block_height DESC
+      LIMIT 1
+      `,
+      [block_height]
+    );
+    if (result.rowCount === 0) {
+      return { found: false } as const;
+    }
+    const row = result.rows[0];
+    const block = this.parseBlockQueryResult(row);
+    return { found: true, result: block } as const;
+  }
+
+  async getCurrentBlock() {
+    const result = await this.pool.query<BlockQueryResult>(
+      `
+      SELECT ${BLOCK_COLUMNS}
+      FROM blocks
+      ORDER BY  block_height DESC
+      LIMIT 1
+      `
+    );
+    if (result.rowCount === 0) {
+      return { found: false } as const;
+    }
+    const row = result.rows[0];
+    const block = this.parseBlockQueryResult(row);
+    return { found: true, result: block } as const;
   }
 
   async getBlock(blockHash: string) {

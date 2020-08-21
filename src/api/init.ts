@@ -18,6 +18,9 @@ import { createAddressRouter } from './routes/address';
 import { createSearchRouter } from './routes/search';
 import { logger } from '../helpers';
 import { createWsRpcRouter } from './routes/ws-rpc';
+import { createNetworkRouter } from './routes/rosetta/network';
+import { validateRequest } from './validate';
+import { RosettaErrors } from './routes/rosetta/errors';
 
 export interface ApiServer {
   expressApp: ExpressWithAsync;
@@ -46,6 +49,9 @@ export async function startApiServer(datastore: DataStore): Promise<ApiServer> {
   // app.use(compression());
   // app.disable('x-powered-by');
 
+  //pars json object
+  app.use(express.json());
+
   // Setup request logging
   app.use(
     expressWinston.logger({
@@ -72,6 +78,32 @@ export async function startApiServer(datastore: DataStore): Promise<ApiServer> {
       router.use('/debug', createDebugRouter(datastore));
       router.use('/status', (req, res) => res.status(200).json({ status: 'ready' }));
       router.use('/faucets', createFaucetRouter(datastore));
+      return router;
+    })()
+  );
+
+  //middleware for rosetta/v1
+  app.use('/rosetta/v1', async (req, res, next) => {
+    const validation = await validateRequest(req.originalUrl, req.body);
+    if (!validation.valid) {
+      const error = RosettaErrors.invalidRequestBody
+      error.details = {
+        error: validation.error
+      }
+      res.status(400).json(error)
+    } else {
+      next();
+    }
+
+  });
+
+  app.use(
+    '/rosetta/v1',
+    (() => {
+      const router = addAsync(express.Router());
+      router.use(cors());
+      router.use('/network', createNetworkRouter(datastore));
+      router.use('/status', (req, res) => res.status(200).json({ status: 'ready' }));
       return router;
     })()
   );
