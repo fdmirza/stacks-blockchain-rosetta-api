@@ -230,6 +230,14 @@ export interface RosettaBlockIdentifier {
 }
 
 /**
+ * A MempoolTransactionRequest is utilized to retrieve a transaction from the mempool.
+ */
+export interface RosettaBlockRequest {
+  network_identifier: NetworkIdentifier;
+  block_identifier: RosettaBlockIdentifier;
+}
+
+/**
  * A BlockResponse includes a fully-populated block or a partially-populated block with a list of other transactions to fetch (other_transactions). As a result of the consensus algorithm of some blockchains, blocks can be omitted (i.e. certain block indexes can be skipped). If a query for one of these omitted indexes is made, the response should not include a Block object. It is VERY important to note that blocks MUST still form a canonical, connected chain of blocks where each block has a unique index. In other words, the PartialBlockIdentifier of a block after an omitted block should reference the last non-omitted block.
  */
 export interface RosettaBlockResponse {
@@ -238,6 +246,15 @@ export interface RosettaBlockResponse {
    * Some blockchains may require additional transactions to be fetched that weren't returned in the block response (ex: block only returns transaction hashes). For blockchains with a lot of transactions in each block, this can be very useful as consumers can concurrently fetch all transactions returned.
    */
   other_transactions?: OtherTransactionIdentifier[];
+}
+
+/**
+ * A BlockTransactionRequest is used to fetch a Transaction included in a block that is not returned in a BlockResponse.
+ */
+export interface RosettaBlockTransactionRequest {
+  network_identifier: NetworkIdentifier;
+  block_identifier: RosettaBlockIdentifier;
+  transaction_identifier: TransactionIdentifier;
 }
 
 /**
@@ -332,6 +349,14 @@ export interface RosettaMempoolTransactionListResponse {
     offset?: number;
     [k: string]: unknown | undefined;
   };
+}
+
+/**
+ * A MempoolTransactionRequest is utilized to retrieve a transaction from the mempool.
+ */
+export interface RosettaMempoolTransactionRequest {
+  network_identifier: NetworkIdentifier;
+  transaction_identifier: TransactionIdentifier;
 }
 
 /**
@@ -496,6 +521,18 @@ export interface RosettaTransaction {
 }
 
 /**
+ * This endpoint returns a list of NetworkIdentifiers that the Rosetta server supports.
+ */
+export interface RosettaNetworkListRequest {
+  /**
+   * A MetadataRequest is utilized in any request where the only argument is optional metadata.
+   */
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
  * A NetworkListResponse contains all NetworkIdentifiers that the node can serve information for.
  */
 export interface RosettaNetworkListResponse {
@@ -503,6 +540,14 @@ export interface RosettaNetworkListResponse {
    * The network_identifier specifies which network a particular object is associated with.
    */
   network_identifiers: NetworkIdentifier[];
+}
+
+/**
+ * TThis endpoint returns the version information and allowed network-specific types for a NetworkIdentifier. Any NetworkIdentifier returned by /network/list should be accessible here. Because options are retrievable in the context of a NetworkIdentifier, it is possible to define unique options for each network.
+ */
+export interface RosettaOptionsRequest {
+  network_identifier: NetworkIdentifier;
+  metadata?: TheMetadataSchema;
 }
 
 /**
@@ -555,6 +600,14 @@ export interface RosettaNetworkOptionsResponse {
     historical_balance_lookup: boolean;
     [k: string]: unknown | undefined;
   };
+}
+
+/**
+ * This endpoint returns the current status of the network requested. Any NetworkIdentifier returned by /network/list should be accessible here.
+ */
+export interface RosettaStatusRequest {
+  network_identifier: NetworkIdentifier;
+  metadata?: TheMetadataSchema;
 }
 
 /**

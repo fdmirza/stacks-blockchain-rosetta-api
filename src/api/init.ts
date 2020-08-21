@@ -23,7 +23,8 @@ import { createMempoolRouter } from './routes/rosetta/mempool';
 import { createRosettaBlockRouter } from './routes/rosetta/block';
 import { createNetworkRouter } from './routes/rosetta/network';
 import { createAccountRouter } from './routes/rosetta/account';
-
+import { RosettaAccountBalanceRequest } from '@blockstack/stacks-blockchain-api-types';
+import { validate, validateRequest } from './validate';
 
 export interface ApiServer {
   expressApp: ExpressWithAsync;
@@ -51,6 +52,9 @@ export async function startApiServer(datastore: DataStore): Promise<ApiServer> {
 
   // app.use(compression());
   // app.disable('x-powered-by');
+
+  //pars json object
+  app.use(express.json());
 
   // Setup request logging
   app.use(
@@ -83,12 +87,19 @@ export async function startApiServer(datastore: DataStore): Promise<ApiServer> {
     })()
   );
 
+  //middleware for rosetta/v1
+  app.use('/rosetta/v1', async (req, res, next) => {
+    console.log('Getting all the requests');
+    console.log('Original url' + req.originalUrl, req.body);
+    await validateRequest(req.originalUrl, req.body);
+    next();
+  });
+
   app.use(
     '/rosetta/v1',
     (() => {
       const router = addAsync(express.Router());
       router.use(cors());
-      router.use(express.json());
       router.use('/mempool', createMempoolRouter(datastore));
       router.use('/block', createRosettaBlockRouter(datastore));
       router.use('/network', createNetworkRouter(datastore));
