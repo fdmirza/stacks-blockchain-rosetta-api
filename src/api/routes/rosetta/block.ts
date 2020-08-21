@@ -1,18 +1,14 @@
 import * as express from 'express';
 import { addAsync, RouterWithAsync } from '@awaitjs/express';
-import {
-  RosettaBlock,
-  RosettaBlockResponse
-} from '@blockstack/stacks-blockchain-api-types';
+import { RosettaBlock, RosettaBlockResponse } from '@blockstack/stacks-blockchain-api-types';
 import { DataStore } from '../../../datastore/common';
 import {
   getBlockFromDataStore,
   getBlockTransactionsFromDataStore,
   getTransactionFromDataStore,
-  getRosettaBlockFromDataStore
+  getRosettaBlockFromDataStore,
 } from '../../controllers/db-controller';
 import { has0xPrefix } from '../../../helpers';
-
 
 export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
   const router = addAsync(express.Router());
@@ -30,14 +26,14 @@ export function createRosettaBlockRouter(db: DataStore): RouterWithAsync {
     if (!block.found) {
       res.status(404).json({
         code: 12,
-        message: "cannot find block by hash",
-        retriable: false
+        message: 'cannot find block by hash',
+        retriable: false,
       });
       return;
     }
     const blockResponse: RosettaBlockResponse = {
-      block: block.result
-    }
+      block: block.result,
+    };
     res.json(blockResponse);
   });
 
