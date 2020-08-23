@@ -547,7 +547,9 @@ export interface RosettaNetworkListResponse {
  */
 export interface RosettaOptionsRequest {
   network_identifier: NetworkIdentifier;
-  metadata?: TheMetadataSchema;
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
 }
 
 /**
@@ -607,7 +609,9 @@ export interface RosettaNetworkOptionsResponse {
  */
 export interface RosettaStatusRequest {
   network_identifier: NetworkIdentifier;
-  metadata?: TheMetadataSchema;
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
 }
 
 /**
