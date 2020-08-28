@@ -118,3 +118,4 @@ src/schemas
 
 # OS specific
 .DS_Store
+rosetta-cli-config/results/result.json
