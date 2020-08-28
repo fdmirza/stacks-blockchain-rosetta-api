@@ -7,5 +7,32 @@
             "symbol": "STX",
             "decimals": 6
         }
+    },
+    {
+        "account_identifier": {
+            "address": "ST17ZNMSQMDARSCZ85Z7BVJX6T20ZWDF3VX0ZP33K"
+        },
+        "currency": {
+            "symbol": "STX",
+            "decimals": 6
+        }
+    },
+    {
+        "account_identifier": {
+            "address": "ST3DR3THSKSWRH10SEDFFP3D90KZYG57J5N8M9KR9"
+        },
+        "currency": {
+            "symbol": "STX",
+            "decimals": 6
+        }
+    },
+    {
+        "account_identifier": {
+            "address": "ST1DTAEAKM02GKCT4NGKTVER8MTJJHYQ9NT27E677"
+        },
+        "currency": {
+            "symbol": "STX",
+            "decimals": 6
+        }
     }
 ]

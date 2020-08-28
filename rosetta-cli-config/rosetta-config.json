@@ -18,13 +18,17 @@
         "log_balance_changes": true,
         "log_reconciliations": false,
         "ignore_reconciliation_error": false,
-        "exempt_accounts": "rosetta-cli-config/exempt_accounts.json",
         "bootstrap_balances": "rosetta-cli-config/bootstrap_balances.json",
+        "exempt_accounts": "rosetta-cli-config/exempt_accounts.json",
         "historical_balance_disabled": true,
         "interesting_accounts": "",
         "reconciliation_disabled": false,
         "inactive_discrepency_search_disabled": false,
-        "balance_tracking_disabled": false
+        "balance_tracking_disabled": false,
+        "end_conditions": {
+            "index": 50
+        },
+        "results_output_file": "./rosetta-cli-config/results/result.json"
     },
     "construction": {
         "offline_url": "http://localhost:3999/rosetta/v1",
