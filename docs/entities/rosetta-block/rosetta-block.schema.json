@@ -18,9 +18,8 @@
     "transactions": {
       "type": "array",
       "description": "All the transactions in the block",
-      "additionalItems": true,
       "items": {
-        "$ref": "./../rosetta-mempool-transactions/rosetta-transaction.schema.json"
+        "$ref": "./../../api/rosetta-mempool-transactions/rosetta-transaction.schema.json"
       }
     },
     "metadata": {
@@ -36,8 +35,7 @@
           "type": "string",
           "description": ""
         }
-      },
-      "additionalProperties": true
+      }
     }
   }
 }

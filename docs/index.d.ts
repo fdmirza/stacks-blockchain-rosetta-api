@@ -190,7 +190,7 @@ export interface RunFaucetResponse {
 export interface RosettaAccountBalanceRequest {
   network_identifier: NetworkIdentifier;
   account_identifier: RosettaAccount;
-  block_identifier?: RosettaBlockIdentifier;
+  block_identifier?: RosettaPartialBlockIdentifier;
 }
 
 /**
@@ -213,20 +213,6 @@ export interface RosettaAccountBalanceResponse {
     sequence_number: number;
     [k: string]: unknown | undefined;
   };
-}
-
-/**
- * The block_identifier uniquely identifies a block in a particular network.
- */
-export interface RosettaBlockIdentifier {
-  /**
-   * This is also known as the block height.
-   */
-  inde    x: number;
-  /**
-   * Block hash
-   */
-  hash: string;
 }
 
 /**
@@ -265,44 +251,6 @@ export interface RosettaBlockTransactionResponse {
 }
 
 /**
- * Blocks contain an array of Transactions that occurred at a particular BlockIdentifier. A hard requirement for blocks returned by Rosetta implementations is that they MUST be inalterable: once a client has requested and received a block identified by a specific BlockIndentifier, all future calls for that same BlockIdentifier must return the same block contents.
- */
-export interface RosettaBlock {
-  block_identifier: RosettaBlockIdentifier;
-  parent_block_identifier: RosettaParentBlockIdentifier;
-  /**
-   * The timestamp of the block in milliseconds since the Unix Epoch. The timestamp is stored in milliseconds because some blockchains produce blocks more often than once a second.
-   */
-  timestamp: number;
-  /**
-   * All the transactions in the block
-   */
-  transactions: RosettaTransaction[];
-  /**
-   * meta data
-   */
-  metadata?: {
-    transactions_root: string;
-    difficulty: string;
-    [k: string]: unknown | undefined;
-  };
-}
-
-/**
- * The block_identifier uniquely identifies a block in a particular network.
- */
-export interface RosettaParentBlockIdentifier {
-  /**
-   * This is also known as the block height.
-   */
-  index: number;
-  /**
-   * Block hash
-   */
-  hash: string;
-}
-
-/**
  * CoinChange is used to represent a change in state of a some coin identified by a coin_identifier. This object is part of the Operation model and must be populated for UTXO-based blockchains. Coincidentally, this abstraction of UTXOs allows for supporting both account-based transfers and UTXO-based transfers on the same blockchain (when a transfer is account-based, don't populate this model).
  */
 export interface RosettaCoinChange {
@@ -323,20 +271,19 @@ export interface RosettaCoinChange {
 }
 
 /**
- * Get a transaction in the mempool by its Transaction Identifier. This is a separate request than fetching a block transaction (/block/transaction) because some blockchain nodes need to know that a transaction query is for something in the mempool instead of a transaction in a block. Transactions may not be fully parsable until they are in a block (ex: may not be possible to determine the fee to pay before a transaction is executed). On this endpoint, it is ok that returned transactions are only estimates of what may actually be included in a block.
+ * Get all Transaction Identifiers in the mempool
  */
-export interface RosettaMempoolTransactionRequest {
+export interface RosettaMempoolTransactionListRequest {
   network_identifier: NetworkIdentifier;
-  transaction_identifier: TransactionIdentifier;
+  metadata?: {
+    [k: string]: unknown | undefined;
+  };
 }
 
 /**
- * The root schema comprises the entire JSON document.
+ * A MempoolResponse contains all transaction identifiers in the mempool for a particular network_identifier.
  */
 export interface RosettaMempoolTransactionListResponse {
-  /**
-   * An explanation about the purpose of this instance.
-   */
   transaction_identifiers: TransactionIdentifier[];
   /**
    * meta data to support pagination
@@ -371,52 +318,9 @@ export interface RosettaMempoolTransactionRequest {
  */
 export interface RosettaMempoolTransactionResponse {
   transaction: RosettaTransaction;
-  /**
-   * An explanation about the purpose of this instance.
-   */
   metadata?: {
-    /**
-     * An explanation about the purpose of this instance.
-     */
-    descendant_fees: number;
-    /**
-     * An explanation about the purpose of this instance.
-     */
-    ancestor_count: number;
-    [k: string]: unknown | undefined;
-  };
-}
-
-/**
- * The network_identifier specifies which network a particular object is associated with.
- */
-export interface NetworkIdentifier {
-  /**
-   * Blockchain name
-   */
-  blockchain: string;
-  /**
-   * If a blockchain has a specific chain-id or network identifier, it should go in this field. It is up to the client to determine which network-specific identifier is mainnet or testnet.
-   */
-  network: string;
-  /**
-   * In blockchains with sharded state, the SubNetworkIdentifier is required to query some object on a specific shard. This identifier is optional for all non-sharded blockchains.
-   */
-  sub_network_identifier?: {
-    /**
-     * Netowork name
-     */
-    network: string;
-    /**
-     * Meta data from subnetwork identifier
-     */
-    metadata?: {
-      /**
-       * producer
-       */
-      producer: string;
-      [k: string]: unknown | undefined;
-    };
+    descendant_fees?: number;
+    ancestor_count?: number;
     [k: string]: unknown | undefined;
   };
 }
@@ -550,7 +454,7 @@ export interface RosettaNetworkListResponse {
 }
 
 /**
- * TThis endpoint returns the version information and allowed network-specific types for a NetworkIdentifier. Any NetworkIdentifier returned by /network/list should be accessible here. Because options are retrievable in the context of a NetworkIdentifier, it is possible to define unique options for each network.
+ * This endpoint returns the version information and allowed network-specific types for a NetworkIdentifier. Any NetworkIdentifier returned by /network/list should be accessible here. Because options are retrievable in the context of a NetworkIdentifier, it is possible to define unique options for each network.
  */
 export interface RosettaOptionsRequest {
   network_identifier: NetworkIdentifier;
@@ -976,7 +880,7 @@ export interface NetworkIdentifier {
 }
 
 /**
- * AA Peer is a representation of a node's peer.
+ * A Peer is a representation of a node's peer.
  */
 export interface RosettaPeers {
   /**
@@ -1132,9 +1036,6 @@ export interface RosettaAmount {
    */
   value: string;
   currency: RosettaCurrency;
-  /**
-   * An explanation about the purpose of this instance.
-   */
   metadata?: {
     [k: string]: unknown | undefined;
   };
@@ -1178,7 +1079,7 @@ export interface RosettaCurrency {
 }
 
 /**
- * The account_identifier uniquely identifies an account within a network. All fields in the account_identifier are utilized to determine this uniqueness (including the metadata field, if populated).
+ * An account may have state specific to a contract address (ERC-20 token) and/or a stake (delegated balance). The sub_account_identifier should specify which state (if applicable) an account instantiation refers to.
  */
 export interface RosettaSubAccount {
   /**
@@ -1186,7 +1087,7 @@ export interface RosettaSubAccount {
    */
   address: string;
   /**
-   * Blockchains that utilize a username model (where the address is not a derivative of a cryptographic public key) should specify the public key(s) owned by the address in metadata.
+   * If the SubAccount address is not sufficient to uniquely specify a SubAccount, any other identifying information can be stored here. It is important to note that two SubAccounts with identical addresses but differing metadata will not be considered equal by clients.
    */
   metadata?: {
     [k: string]: unknown | undefined;
@@ -1208,6 +1109,30 @@ export interface RosettaBlockIdentifier {
 }
 
 /**
+ * Blocks contain an array of Transactions that occurred at a particular BlockIdentifier. A hard requirement for blocks returned by Rosetta implementations is that they MUST be inalterable: once a client has requested and received a block identified by a specific BlockIndentifier, all future calls for that same BlockIdentifier must return the same block contents.
+ */
+export interface RosettaBlock {
+  block_identifier: RosettaBlockIdentifier;
+  parent_block_identifier: RosettaParentBlockIdentifier;
+  /**
+   * The timestamp of the block in milliseconds since the Unix Epoch. The timestamp is stored in milliseconds because some blockchains produce blocks more often than once a second.
+   */
+  timestamp: number;
+  /**
+   * All the transactions in the block
+   */
+  transactions: RosettaTransaction[];
+  /**
+   * meta data
+   */
+  metadata?: {
+    transactions_root: string;
+    difficulty: string;
+    [k: string]: unknown | undefined;
+  };
+}
+
+/**
  * The block_identifier uniquely identifies a block in a particular network.
  */
 export interface RosettaGenesisBlockIdentifier {
@@ -1225,6 +1150,20 @@ export interface RosettaGenesisBlockIdentifier {
  * The block_identifier uniquely identifies a block in a particular network.
  */
 export interface RosettaOldestBlockIdentifier {
+  /**
+   * This is also known as the block height.
+   */
+  index: number;
+  /**
+   * Block hash
+   */
+  hash: string;
+}
+
+/**
+ * The block_identifier uniquely identifies a block in a particular network.
+ */
+export interface RosettaParentBlockIdentifier {
   /**
    * This is also known as the block height.
    */

@@ -13,8 +13,7 @@
       "$ref": "./../../entities/rosetta-account/rosetta-account.schema.json"
     },
     "block_identifier": {
-      "$ref": "./../../entities/rosetta-block/rosetta-block-identifier.schema.json"
+      "$ref": "./../../entities/rosetta-block/rosetta-partial-block-identifier.schema.json"
     }
-  },
-  "additionalProperties": true
+  }
 }

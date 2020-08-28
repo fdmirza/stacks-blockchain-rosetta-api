@@ -7,7 +7,7 @@
   "required": [],
   "properties": {
     "block": {
-      "$ref": "./rosetta-block.schema.json"
+      "$ref": "./../../entities/rosetta-block/rosetta-block.schema.json"
     },
     "other_transactions": {
       "type": "array",
