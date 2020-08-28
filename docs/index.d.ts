@@ -222,7 +222,7 @@ export interface RosettaBlockIdentifier {
   /**
    * This is also known as the block height.
    */
-  index: number;
+  inde    x: number;
   /**
    * Block hash
    */
@@ -230,11 +230,11 @@ export interface RosettaBlockIdentifier {
 }
 
 /**
- * A MempoolTransactionRequest is utilized to retrieve a transaction from the mempool.
+ * A BlockRequest is utilized to make a block request on the /block endpoint.
  */
 export interface RosettaBlockRequest {
   network_identifier: NetworkIdentifier;
-  block_identifier: RosettaBlockIdentifier;
+  block_identifier: RosettaPartialBlockIdentifier;
 }
 
 /**
@@ -255,6 +255,13 @@ export interface RosettaBlockTransactionRequest {
   network_identifier: NetworkIdentifier;
   block_identifier: RosettaBlockIdentifier;
   transaction_identifier: TransactionIdentifier;
+}
+
+/**
+ * A BlockTransactionResponse contains information about a block transaction.
+ */
+export interface RosettaBlockTransactionResponse {
+  transaction: RosettaTransaction;
 }
 
 /**
@@ -1226,6 +1233,20 @@ export interface RosettaOldestBlockIdentifier {
    * Block hash
    */
   hash: string;
+}
+
+/**
+ * When fetching data by BlockIdentifier, it may be possible to only specify the index or hash. If neither property is specified, it is assumed that the client is making a request at the current block.
+ */
+export interface RosettaPartialBlockIdentifier {
+  /**
+   * This is also known as the block height.
+   */
+  index?: number;
+  /**
+   * Block hash
+   */
+  hash?: string;
 }
 
 export type TransactionEventAssetType = "transfer" | "mint" | "burn";
