@@ -1,43 +1,15 @@
 import * as supertest from 'supertest';
 import {
-  makeContractCall,
-  NonFungibleConditionCode,
-  FungibleConditionCode,
-  bufferCVFromString,
-  ClarityAbi,
-  ClarityType,
-  makeContractDeploy,
-  serializeCV,
-  sponsorTransaction,
-} from '@blockstack/stacks-transactions';
-import {
-  createNonFungiblePostCondition,
-  createFungiblePostCondition,
-  createSTXPostCondition,
-} from '@blockstack/stacks-transactions/lib/postcondition';
-import * as BN from 'bn.js';
-import { readTransaction } from '../p2p/tx';
-import { BufferReader } from '../binary-reader';
-import { getTxFromDataStore, getBlockFromDataStore } from '../api/controllers/db-controller';
-import {
-  createDbTxFromCoreMsg,
   DbBlock,
-  DbTx,
   DbTxTypeId,
-  DbStxEvent,
-  DbEventTypeId,
-  DbAssetEventTypeId,
-  DbFtEvent,
-  DbNftEvent,
   DbMempoolTx,
-  DbSmartContract,
-  DbSmartContractEvent,
   DbTxStatus,
 } from '../datastore/common';
 import { startApiServer, ApiServer } from '../api/init';
 import { PgDataStore, cycleMigrations, runMigrations } from '../datastore/postgres-store';
 import { PoolClient } from 'pg';
 import { RosettaBlock } from '@blockstack/stacks-blockchain-api-types';
+
 
 describe('api tests', () => {
   let db: PgDataStore;
@@ -49,7 +21,7 @@ describe('api tests', () => {
     await cycleMigrations();
     db = await PgDataStore.connect();
     client = await db.pool.connect();
-    api = await startApiServer(db, new Map());
+    api = await startApiServer(db);
   });
 
   test('fetch mempool', async () => {

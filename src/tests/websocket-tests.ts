@@ -13,10 +13,6 @@ import {
   DbMempoolTx,
 } from '../datastore/common';
 import { waiter, Waiter } from '../helpers';
-
-import { PoolClient } from 'pg';
-import { once } from 'events';
-import { RpcWebSocketClient } from 'rpc-websocket-client';
 import {
   RpcTxUpdateSubscriptionParams,
   RpcTxUpdateNotificationParams,
@@ -26,7 +22,11 @@ import {
   RpcAddressBalanceNotificationParams,
   TransactionStatus,
 } from '@blockstack/stacks-blockchain-api-types';
+import { PoolClient } from 'pg';
+import { once } from 'events';
+import { RpcWebSocketClient } from 'rpc-websocket-client';
 import { connectWebSocketClient } from '@stacks/blockchain-api-client';
+
 
 describe('websocket notifications', () => {
   let apiServer: ApiServer;
